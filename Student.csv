@@ -1,4 +1,4 @@
-﻿Reg No,Name,File Path
+﻿Reg No,Name,File Paths
 1,Kit Harington,Images/Kit.jpg
 2,Emilia Clarke,Images/Emilia.jpg
 3,Richard Madison,Images/Richard.jpg
@@ -8,8 +8,8 @@
 7,Chris Evans,Images/ChrisEvans.jpeg
 8,Robert Downey Jr,Images/RobertDowneyJr.jpeg
 9,Scarlett Johannson,Images/ScarlettJohannson.jpeg
-10,Puneeth Sai,Images/Puneeth.jpeg
-11,Abhay Kamath,Images/Abhay.jpeg
+10,Puneeth Sai,"Images/Puneeth3.jpg,Images/Puneeth2.jpeg"
+11,Abhay Kamath,Images/Abhay1.jpeg
 12,Shawn Lasrado,Images/Shawn.jpeg
 13,Shahbaz Malik Shabbir,Images/Shahbaz.jpeg
 14,Kritik Mahesh Kumar,Images/Kritik.jpeg
@@ -17,3 +17,5 @@
 16,Ahil Fakih,Images/Ahil.jpeg
 17,Sumit Kumar,Images/Sumit.jpeg
 18,Gladan Delwin D Souza,Images/Gladan.jpeg
+19,Anush Venkat,Images/Anush.jpeg
+19,Anush Venkat,Images/Anush1.jpeg
