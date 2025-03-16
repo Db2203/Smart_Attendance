@@ -1,0 +1,6 @@
+# Ignore compiled Python files
+__pycache__/
+
+# Ignore attendance-related files
+GUI/attendance_db.py
+attendance.db
