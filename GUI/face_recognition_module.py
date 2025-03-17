@@ -1,5 +1,3 @@
-# face_recognition_module.py
-
 import os
 import pickle
 import concurrent.futures
@@ -9,8 +7,8 @@ import face_recognition as fr
 from PIL import Image, ImageEnhance
 from my_config import IMAGE_ENHANCEMENT, FACE_RECOGNITION
 
+
 def preprocess_image(image):
-    """Enhance the image's brightness, contrast, and sharpness."""
     pil_img = Image.fromarray(image)
     enhancer = ImageEnhance.Brightness(pil_img)
     pil_img = enhancer.enhance(IMAGE_ENHANCEMENT['brightness'])
@@ -20,11 +18,8 @@ def preprocess_image(image):
     pil_img = enhancer.enhance(IMAGE_ENHANCEMENT['sharpness'])
     return np.array(pil_img)
 
+
 def load_student_encodings(student_csv='Student.csv'):
-    """
-    Load student information and face encodings.
-    Reads a CSV file with columns 'Reg No', 'Name', and 'File Paths'.
-    """
     df = pd.read_csv(student_csv)
     reg_no_to_name = dict(zip(df['Reg No'], df['Name']))
     if os.path.exists("student_encodings.pkl"):
@@ -34,11 +29,8 @@ def load_student_encodings(student_csv='Student.csv'):
         encodings_dict = precompute_student_encodings(df)
     return encodings_dict, reg_no_to_name
 
+
 def precompute_student_encodings(df):
-    """
-    Compute face encodings for each student using concurrency,
-    then save the results to a pickle file.
-    """
     encodings_dict = {}
 
     def encode_face(image_path):
@@ -55,7 +47,6 @@ def precompute_student_encodings(df):
         stud_paths = row['File Paths'].split(',')
         with concurrent.futures.ThreadPoolExecutor() as executor:
             results = list(executor.map(encode_face, stud_paths))
-        # Flatten the list of lists into a single list of encodings
         encodings_dict[row['Reg No']] = [enc for sublist in results for enc in sublist]
 
     with open("student_encodings.pkl", "wb") as f:
@@ -64,33 +55,29 @@ def precompute_student_encodings(df):
     print("[Log] Student encodings precomputed and saved.")
     return encodings_dict
 
+
 def recognize_faces_in_image(image_path, student_encodings, reg_no_to_name):
-    """
-    Given an image file path, detect and recognize faces.
-    Returns a set of recognized registration numbers and logs.
-    """
     logs = []
     try:
         unknown_image = fr.load_image_file(image_path)
         unknown_image = preprocess_image(unknown_image)
-        unknown_encodings = fr.face_encodings(unknown_image, model=FACE_RECOGNITION['model'])
+        face_locations = fr.face_locations(unknown_image)
+        unknown_encodings = fr.face_encodings(unknown_image, known_face_locations=face_locations, model=FACE_RECOGNITION['model'])
     except Exception as e:
         logs.append(f"[Error] Failed to process image: {e}")
-        return set(), logs
+        return set(), logs, [], None
 
     if not unknown_encodings:
         logs.append("[Error] No faces detected in the image.")
-        return set(), logs
+        return set(), logs, [], unknown_image
 
     recognized_reg_nos = set()
+    close_match_candidates = []
 
-    for unknown_encoding in unknown_encodings:
-        # Ensure the encoding is a 1D numpy array
-        if not isinstance(unknown_encoding, np.ndarray):
-            unknown_encoding = np.array(unknown_encoding)
-        if unknown_encoding.ndim != 1:
-            unknown_encoding = unknown_encoding.flatten()
+    confirmation_margin = FACE_RECOGNITION.get('confirmation_margin', 0.1)
+    confirmation_threshold = FACE_RECOGNITION['threshold'] + confirmation_margin
 
+    for i, unknown_encoding in enumerate(unknown_encodings):
         best_match = None
         best_distance = 1.0
 
@@ -111,7 +98,10 @@ def recognize_faces_in_image(image_path, student_encodings, reg_no_to_name):
 
         if best_distance < FACE_RECOGNITION['threshold']:
             recognized_reg_nos.add(best_match)
+        elif best_distance < confirmation_threshold:
+            candidate_face_location = face_locations[i] if i < len(face_locations) else None
+            close_match_candidates.append((unknown_encoding, best_match, best_distance, candidate_face_location))
         else:
             logs.append(f"Unknown face with distance: {best_distance:.3f}")
 
-    return recognized_reg_nos, logs
+    return recognized_reg_nos, logs, close_match_candidates, unknown_image
