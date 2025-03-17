@@ -3,13 +3,7 @@ from tkinter import filedialog as fd, messagebox
 from tkinter import Toplevel, Label, Button, Frame
 from PIL import Image, ImageTk
 import pandas as pd
-import os
-import subprocess
-import sys
-import pickle
-import numpy as np
-import face_recognition as fr
-
+import os, subprocess, sys, pickle, numpy as np, face_recognition as fr
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from face_recognition_module import load_student_encodings, recognize_faces_in_image, preprocess_image
@@ -19,96 +13,101 @@ from my_config import FACE_RECOGNITION
 class SmartAttendanceApp:
 
     def __init__(self, master):
+
         self.master = master
         self.master.title("Smart Attendance System")
-        self.master.geometry("900x900")
-        self.master.config(background="#121212")
+        self.master.configure(bg="#121212")
+        self.master.geometry("1000x800")
 
-        try:
-            self.master.iconphoto(True, tk.PhotoImage(file='GUI/logo.png'))
-        except Exception as e:
-            print("[Warning] Icon file not found.")
+        self.master.grid_rowconfigure(1, weight=1)
+        self.master.grid_columnconfigure(0, weight=1)
 
-        self.label = tk.Label(master, text="Smart Attendance System", 
-                              font=('Elianto', 25, 'bold'),
-                              fg='white', bg='#121212')
-        self.label.place(x=250, y=50)
 
-        log_frame = tk.Frame(master, bg="#121212")
-        log_frame.place(x=50, y=150, width=800, height=400)
+        self.header_frame = tk.Frame(master, bg="#121212")
+        self.header_frame.grid(row=0, column=0, sticky="ew", padx=20, pady=10)
+        self.header_frame.grid_columnconfigure(0, weight=1)
 
-        self.log_text = tk.Text(log_frame, 
-                                font=('Elianto', 12), 
-                                fg='#32CD32', 
-                                bg='#121212', 
+        self.header_label = tk.Label(self.header_frame,
+                                     text="Smart Attendance System",
+                                     font=("Helvetica", 28, "bold"),
+                                     bg="#121212", fg="white")
+        self.header_label.grid(row=0, column=0, sticky="nsew")
+
+        self.refresh_icon = tk.Button(self.header_frame,
+                                      text="⟳",
+                                      font=("Helvetica", 12),
+                                      bg="#121212", fg="#00FF00",
+                                      bd=0, activebackground="#121212",
+                                      command=self.refresh_encodings)
+        self.refresh_icon.grid(row=0, column=1, sticky="ne", padx=10)
+
+
+        self.log_frame = tk.Frame(master, bg="#121212")
+        self.log_frame.grid(row=1, column=0, sticky="nsew", padx=20, pady=10)
+        self.log_frame.grid_rowconfigure(0, weight=1)
+        self.log_frame.grid_columnconfigure(0, weight=1)
+
+        self.log_text = tk.Text(self.log_frame,
+                                font=("Helvetica", 12),
+                                bg="#121212", fg="#32CD32",
                                 wrap=tk.WORD)
-        self.log_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.log_text.grid(row=0, column=0, sticky="nsew")
 
-        scrollbar = tk.Scrollbar(log_frame, command=self.log_text.yview)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self.log_text.config(yscrollcommand=scrollbar.set)
+        self.scrollbar = tk.Scrollbar(self.log_frame, command=self.log_text.yview)
+        self.scrollbar.grid(row=0, column=1, sticky="ns")
+        self.log_text.config(yscrollcommand=self.scrollbar.set)
 
-        button_frame = tk.Frame(master, bg="#121212")
-        button_frame.place(x=50, y=580, width=800, height=100)
 
-        self.button = tk.Button(button_frame, 
-                                text='Choose Image!',
-                                font=('Comic Sans', 18, 'bold'),
-                                fg='#00FF00', 
-                                bg='black',
-                                activeforeground='black',
-                                activebackground='white',
-                                command=self.process_image)
-        self.button.grid(row=0, column=0, padx=10, pady=20)
+        self.button_frame = tk.Frame(master, bg="#121212")
+        self.button_frame.grid(row=2, column=0, sticky="ew", padx=20, pady=10)
+        self.button_frame.grid_columnconfigure(0, weight=1)
+        self.button_frame.grid_columnconfigure(1, weight=1)
+        self.button_frame.grid_columnconfigure(2, weight=1)
 
-        self.add_student_button = tk.Button(button_frame, 
-                                            text='Add New Student',
-                                            font=('Comic Sans', 18, 'bold'),
-                                            fg='#00FF00', 
-                                            bg='black',
-                                            activeforeground='black',
-                                            activebackground='white',
-                                            command=self.add_student)
-        self.add_student_button.grid(row=0, column=1, padx=10, pady=20)
+        self.choose_button = tk.Button(self.button_frame,
+                                       text="Choose Image!",
+                                       font=("Helvetica", 16, "bold"),
+                                       bg="black", fg="#00FF00",
+                                       command=self.process_image,
+                                       width=20)
+        self.choose_button.grid(row=0, column=0, padx=10, pady=10)
 
-        self.download = tk.Button(button_frame, 
-                                  text='Download Attendance Records',
-                                  font=('Comic Sans', 18, 'bold'),
-                                  fg='#00FF00', 
-                                  bg='black',
-                                  activeforeground='black',
-                                  activebackground='white',
-                                  command=self.download_file)
-        self.download.grid(row=0, column=2, padx=10, pady=20)
+        self.add_button = tk.Button(self.button_frame,
+                                    text="Add New Student",
+                                    font=("Helvetica", 16, "bold"),
+                                    bg="black", fg="#00FF00",
+                                    command=self.add_student,
+                                    width=20)
+        self.add_button.grid(row=0, column=1, padx=10, pady=10)
 
-        self.refresh_button = tk.Button(button_frame, 
-                                        text='Refresh Encodings',
-                                        font=('Comic Sans', 14, 'bold'),
-                                        fg='#00FF00', 
-                                        bg='black',
-                                        activeforeground='black',
-                                        activebackground='white',
-                                        command=self.refresh_encodings)
-        self.refresh_button.grid(row=0, column=3, padx=10, pady=20)
+        self.download_button = tk.Button(self.button_frame,
+                                         text="Download Attendance Records",
+                                         font=("Helvetica", 16, "bold"),
+                                         bg="black", fg="#00FF00",
+                                         command=self.download_file,
+                                         width=25)
+        self.download_button.grid(row=0, column=2, padx=10, pady=10)
 
-        self.pr_df = pd.DataFrame(columns=['Reg No', 'Name'])
-        self.abs_df = pd.DataFrame(columns=['Reg No', 'Name'])
+
+        self.pr_df = pd.DataFrame(columns=["Reg No", "Name"])
+        self.abs_df = pd.DataFrame(columns=["Reg No", "Name"])
 
         self.student_encodings, self.reg_no_to_name = load_student_encodings()
-
         self.rejections = {}
 
 
     def update_log(self, text):
+
         self.log_text.insert(tk.END, text + "\n")
-        self.log_text.yview_moveto(1)
+        self.log_text.see(tk.END)
         print(text)
 
 
     def get_image_path(self):
-        if os.name == 'nt':
+
+        if os.name == "nt":
             return fd.askopenfilename(title="Select an image",
-                                      filetypes=[("JPEG files", "*.jpg *.jpeg"), 
+                                      filetypes=[("JPEG files", "*.jpg *.jpeg"),
                                                  ("PNG files", "*.png")])
         else:
             try:
@@ -119,21 +118,25 @@ class SmartAttendanceApp:
             except Exception as e:
                 self.update_log(f"[Error] Zenity failed: {e}")
             return fd.askopenfilename(title="Select an image",
-                                      filetypes=[("JPEG files", "*.jpg *.jpeg"), 
+                                      filetypes=[("JPEG files", "*.jpg *.jpeg"),
                                                  ("PNG files", "*.png")])
 
 
     def ask_user_confirmation(self, cropped_face, prompt):
+
         dialog = Toplevel(self.master)
         dialog.title("Confirm Identity")
+        dialog.configure(bg="#121212")
 
         photo = ImageTk.PhotoImage(cropped_face)
         dialog.photo = photo
 
-        img_label = Label(dialog, image=photo)
+        img_label = Label(dialog, image=photo, bg="#121212")
         img_label.pack(pady=10)
 
-        prompt_label = Label(dialog, text=prompt, font=('Arial', 14))
+        prompt_label = Label(dialog, text=prompt,
+                             font=("Helvetica", 14),
+                             bg="#121212", fg="white")
         prompt_label.pack(pady=10)
 
         answer = {"result": None}
@@ -146,19 +149,29 @@ class SmartAttendanceApp:
             answer["result"] = False
             dialog.destroy()
 
-        btn_frame = Frame(dialog)
+        btn_frame = Frame(dialog, bg="#121212")
         btn_frame.pack(pady=10)
-        yes_button = Button(btn_frame, text="Yes", command=yes, width=10)
-        yes_button.pack(side="left", padx=5)
-        no_button = Button(btn_frame, text="No", command=no, width=10)
-        no_button.pack(side="left", padx=5)
+
+        yes_button = Button(btn_frame, text="Yes",
+                            font=("Helvetica", 12, "bold"),
+                            bg="black", fg="#00FF00",
+                            command=yes, width=10)
+        yes_button.pack(side="left", padx=10)
+
+        no_button = Button(btn_frame, text="No",
+                           font=("Helvetica", 12, "bold"),
+                           bg="black", fg="#00FF00",
+                           command=no, width=10)
+        no_button.pack(side="left", padx=10)
 
         dialog.grab_set()
         self.master.wait_window(dialog)
+
         return answer["result"]
 
 
     def process_image(self):
+
         image_path = self.get_image_path()
         if not image_path:
             self.update_log("[Log] No input file selected.")
@@ -173,7 +186,6 @@ class SmartAttendanceApp:
             self.update_log(log)
 
         pil_unknown_image = Image.fromarray(unknown_image) if unknown_image is not None else None
-
         rejection_similarity_threshold = 0.05
 
         for candidate in close_match_candidates:
@@ -229,63 +241,71 @@ class SmartAttendanceApp:
             if reg_no not in recognized_reg_nos:
                 absentees.append([reg_no, name])
 
-        self.pr_df = pd.DataFrame(presentees, columns=['Reg No', 'Name'])
-        self.abs_df = pd.DataFrame(absentees, columns=['Reg No', 'Name'])
+        self.pr_df = pd.DataFrame(presentees, columns=["Reg No", "Name"])
+        self.abs_df = pd.DataFrame(absentees, columns=["Reg No", "Name"])
 
         self.update_log("[Log] Attendance updated successfully.")
         self.update_log(f"Total Present: {len(presentees)} | Total Absent: {len(absentees)}")
 
 
     def create_absentees_from_all(self):
+
         absentees = []
         for reg_no, name in self.reg_no_to_name.items():
             absentees.append([reg_no, name])
-        self.abs_df = pd.DataFrame(absentees, columns=['Reg No', 'Name'])
+        self.abs_df = pd.DataFrame(absentees, columns=["Reg No", "Name"])
         self.update_log("[Log] All students marked as absent.")
 
 
     def download_file(self):
+
         if self.pr_df.empty and self.abs_df.empty:
             self.update_log("[Error] No data to save. Process an image first.")
             return
 
-        presentees_file = fd.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV files", "*.csv")])
+        presentees_file = fd.asksaveasfilename(defaultextension=".csv",
+                                               filetypes=[("CSV files", "*.csv")])
         if presentees_file:
-            self.pr_df.to_csv(presentees_file, sep=',', index=False, encoding='utf-8')
+            self.pr_df.to_csv(presentees_file, sep=",", index=False, encoding="utf-8")
             self.update_log(f"[Log] Presentees saved to: {presentees_file}")
 
-        absentees_file = fd.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV files", "*.csv")])
+        absentees_file = fd.asksaveasfilename(defaultextension=".csv",
+                                              filetypes=[("CSV files", "*.csv")])
         if absentees_file:
-            self.abs_df.to_csv(absentees_file, sep=',', index=False, encoding='utf-8')
+            self.abs_df.to_csv(absentees_file, sep=",", index=False, encoding="utf-8")
             self.update_log(f"[Log] Absentees saved to: {absentees_file}")
 
 
     def refresh_encodings(self):
+
         self.student_encodings, self.reg_no_to_name = load_student_encodings(force_refresh=True)
         self.update_log("[Log] Student encodings refreshed from CSV.")
 
 
     def add_student(self):
+
         add_window = Toplevel(self.master)
         add_window.title("Add New Student")
         add_window.geometry("400x300")
-        add_window.config(bg="#121212")
+        add_window.configure(bg="#121212")
 
-        Label(add_window, text="Reg No:", font=('Comic Sans', 12), bg="#121212", fg="white").pack(pady=5)
-        reg_no_entry = tk.Entry(add_window, font=('Comic Sans', 12))
+        Label(add_window, text="Reg No:", font=("Comic Sans", 12),
+              bg="#121212", fg="white").pack(pady=5)
+        reg_no_entry = tk.Entry(add_window, font=("Comic Sans", 12))
         reg_no_entry.pack(pady=5)
 
-        Label(add_window, text="Name:", font=('Comic Sans', 12), bg="#121212", fg="white").pack(pady=5)
-        name_entry = tk.Entry(add_window, font=('Comic Sans', 12))
+        Label(add_window, text="Name:", font=("Comic Sans", 12),
+              bg="#121212", fg="white").pack(pady=5)
+        name_entry = tk.Entry(add_window, font=("Comic Sans", 12))
         name_entry.pack(pady=5)
 
         image_path_var = tk.StringVar()
 
         def browse_image():
             path = ""
-            if os.name == 'nt':
+            if os.name == "nt":
                 path = fd.askopenfilename(title="Select an image",
-                                          filetypes=[("JPEG files", "*.jpg *.jpeg"), 
+                                          filetypes=[("JPEG files", "*.jpg *.jpeg"),
                                                      ("PNG files", "*.png")])
             else:
                 try:
@@ -295,20 +315,20 @@ class SmartAttendanceApp:
                         path = result.stdout.strip()
                     else:
                         path = fd.askopenfilename(title="Select an image",
-                                                  filetypes=[("JPEG files", "*.jpg *.jpeg"), 
+                                                  filetypes=[("JPEG files", "*.jpg *.jpeg"),
                                                              ("PNG files", "*.png")])
                 except Exception as e:
                     self.update_log(f"[Error] Zenity failed: {e}")
                     path = fd.askopenfilename(title="Select an image",
-                                              filetypes=[("JPEG files", "*.jpg *.jpeg"), 
+                                              filetypes=[("JPEG files", "*.jpg *.jpeg"),
                                                          ("PNG files", "*.png")])
             image_path_var.set(path)
             if path:
-                Label(add_window, text=f"Selected: {os.path.basename(path)}", 
-                      font=('Comic Sans', 10), bg="#121212", fg="white").pack()
+                Label(add_window, text=f"Selected: {os.path.basename(path)}",
+                      font=("Comic Sans", 10), bg="#121212", fg="white").pack()
 
-        Button(add_window, text="Browse Image", font=('Comic Sans', 12), 
-               fg='#00FF00', bg='black', command=browse_image).pack(pady=10)
+        Button(add_window, text="Browse Image", font=("Comic Sans", 12),
+               fg="#00FF00", bg="black", command=browse_image).pack(pady=10)
 
         def submit_student():
             reg_no = reg_no_entry.get().strip()
@@ -317,11 +337,10 @@ class SmartAttendanceApp:
             if not reg_no or not name or not image_path:
                 messagebox.showerror("Error", "All fields are required!")
                 return
-
             try:
                 image = fr.load_image_file(image_path)
                 image = preprocess_image(image)
-                encodings = fr.face_encodings(image, model=FACE_RECOGNITION['model'])
+                encodings = fr.face_encodings(image, model=FACE_RECOGNITION["model"])
                 if not encodings:
                     messagebox.showerror("Error", "No face detected in the image.")
                     return
@@ -329,7 +348,6 @@ class SmartAttendanceApp:
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to process image: {e}")
                 return
-
             csv_file = "Student.csv"
             if os.path.exists(csv_file):
                 df = pd.read_csv(csv_file, dtype=str)
@@ -337,7 +355,6 @@ class SmartAttendanceApp:
                 df["File Paths"] = df["File Paths"].fillna("")
             else:
                 df = pd.DataFrame(columns=["Reg No", "Name", "File Paths"])
-
             existing_reg_nos = [x.strip() for x in df["Reg No"].tolist()]
             if reg_no in existing_reg_nos:
                 idx = existing_reg_nos.index(reg_no)
@@ -351,35 +368,30 @@ class SmartAttendanceApp:
                 new_row = {"Reg No": reg_no, "Name": name, "File Paths": image_path}
                 df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
                 self.update_log(f"[Log] Added new student record for reg no {reg_no}.")
-
             try:
                 df.to_csv(csv_file, index=False, encoding="utf-8")
                 self.update_log("[Log] CSV file updated successfully.")
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to update CSV: {e}")
                 return
-
             df_reload = pd.read_csv(csv_file, dtype=str)
             df_reload["Reg No"] = df_reload["Reg No"].str.strip()
             self.reg_no_to_name = dict(zip(df_reload["Reg No"], df_reload["Name"]))
-
             if reg_no in self.student_encodings:
                 self.student_encodings[reg_no].append(encoding)
             else:
                 self.student_encodings[reg_no] = [encoding]
-
             try:
                 with open("student_encodings.pkl", "wb") as f:
                     pickle.dump(self.student_encodings, f)
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to update encodings file: {e}")
                 return
-
             messagebox.showinfo("Success", "New student added/updated successfully!")
             add_window.destroy()
 
-        Button(add_window, text="Submit", font=('Comic Sans', 12), 
-               fg='#00FF00', bg='black', command=submit_student).pack(pady=10)
+        Button(add_window, text="Submit", font=("Comic Sans", 12),
+               fg="#00FF00", bg="black", command=submit_student).pack(pady=10)
 
 
 def main():

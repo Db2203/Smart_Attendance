@@ -88,7 +88,7 @@ def recognize_faces_in_image(image_path, student_encodings, reg_no_to_name):
         unknown_image = fr.load_image_file(image_path)
         unknown_image = preprocess_image(unknown_image)
         face_locations = fr.face_locations(unknown_image)
-        unknown_encodings = fr.face_encodings(unknown_image, 
+        unknown_encodings = fr.face_encodings(unknown_image,
                                               known_face_locations=face_locations,
                                               model=FACE_RECOGNITION['model'])
     except Exception as e:
@@ -101,14 +101,14 @@ def recognize_faces_in_image(image_path, student_encodings, reg_no_to_name):
 
     recognized_reg_nos = set()
     close_match_candidates = []
-    
+
     confirmation_margin = FACE_RECOGNITION.get('confirmation_margin', 0.1)
     confirmation_threshold = FACE_RECOGNITION['threshold'] + confirmation_margin
-    
+
     for i, unknown_encoding in enumerate(unknown_encodings):
         best_match = None
         best_distance = 1.0
-        
+
         for reg_no, known_encodings in student_encodings.items():
             distances = []
             for known_encoding in known_encodings:
@@ -123,7 +123,7 @@ def recognize_faces_in_image(image_path, student_encodings, reg_no_to_name):
                 if student_min_distance < best_distance:
                     best_distance = student_min_distance
                     best_match = reg_no
-        
+
         if best_distance < FACE_RECOGNITION['threshold']:
             recognized_reg_nos.add(best_match)
         elif best_distance < confirmation_threshold:
@@ -131,5 +131,5 @@ def recognize_faces_in_image(image_path, student_encodings, reg_no_to_name):
             close_match_candidates.append((unknown_encoding, best_match, best_distance, candidate_face_location))
         else:
             logs.append(f"Unknown face with distance: {best_distance:.3f}")
-    
+
     return recognized_reg_nos, logs, close_match_candidates, unknown_image
