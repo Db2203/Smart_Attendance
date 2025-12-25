@@ -6,7 +6,7 @@ IMAGE_ENHANCEMENT = {
 
 FACE_RECOGNITION = {
     'model': 'cnn',
-    'threshold': 0.45,
+    'threshold': 0.5,
     'resize_scale': 0.25,
     'confirmation_margin': 0.1
 }

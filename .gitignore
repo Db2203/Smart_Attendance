@@ -4,3 +4,7 @@ __pycache__/
 # Ignore attendance-related files
 GUI/attendance_db.py
 attendance.db
+/Images/
+/Reference_Images/
+absent.csv
+present.csv
