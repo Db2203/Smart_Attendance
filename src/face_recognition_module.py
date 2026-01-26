@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import face_recognition as fr
 from PIL import Image, ImageEnhance
-from my_config import IMAGE_ENHANCEMENT, FACE_RECOGNITION
+from config import IMAGE_ENHANCEMENT, FACE_RECOGNITION, PATHS
 
 
 def preprocess_image(image):
@@ -21,29 +21,32 @@ def preprocess_image(image):
     return np.array(pil_img)
 
 
-def load_student_encodings(student_csv='Student.csv', force_refresh=False):
-    import os
+def load_student_encodings(student_csv=None, force_refresh=False):
+    if student_csv is None:
+        student_csv = PATHS['student_csv']
+    encodings_pkl = PATHS['encodings_pkl']
+
     need_refresh = force_refresh
-    
-    if not os.path.exists("student_encodings.pkl"):
+
+    if not os.path.exists(encodings_pkl):
         need_refresh = True
     else:
         csv_mtime = os.path.getmtime(student_csv)
-        pickle_mtime = os.path.getmtime("student_encodings.pkl")
+        pickle_mtime = os.path.getmtime(encodings_pkl)
         if csv_mtime > pickle_mtime:
             need_refresh = True
 
     df = pd.read_csv(student_csv, dtype=str)
     df["Reg No"] = df["Reg No"].str.strip()
     reg_no_to_name = dict(zip(df["Reg No"], df["Name"]))
-    
+
     if need_refresh:
         encodings_dict = precompute_student_encodings(df)
     else:
-        with open("student_encodings.pkl", "rb") as f:
+        with open(encodings_pkl, "rb") as f:
             encodings_dict = pickle.load(f)
         encodings_dict = {reg.strip(): enc for reg, enc in encodings_dict.items()}
-    
+
     return encodings_dict, reg_no_to_name
 
 
@@ -70,9 +73,9 @@ def precompute_student_encodings(df):
         
         encodings_dict[row['Reg No']] = all_encodings
 
-    with open("student_encodings.pkl", "wb") as f:
+    with open(PATHS['encodings_pkl'], "wb") as f:
         pickle.dump(encodings_dict, f)
-    
+
     print("[Log] Student encodings precomputed and saved.")
     return encodings_dict
 

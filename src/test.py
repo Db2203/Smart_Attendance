@@ -1,7 +1,7 @@
 import pickle
 
 # Load the student encodings
-with open("student_encodings.pkl", "rb") as f:
+with open("data/student_encodings.pkl", "rb") as f:
     student_encodings = pickle.load(f)
 
 # Print the keys (Reg Nos) and the number of encodings for each student
