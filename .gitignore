@@ -1,10 +1,12 @@
 # Ignore compiled Python files
 __pycache__/
 
-# Ignore attendance-related files
-GUI/attendance_db.py
-attendance.db
-/Images/
-/Reference_Images/
-absent.csv
-present.csv
+# Ignore student images (keep locally, don't push)
+/images/
+/reference_images/
+
+# Ignore data files
+data/attendance.db
+data/student_encodings.pkl
+data/absent.csv
+data/present.csv

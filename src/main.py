@@ -3,11 +3,10 @@ from tkinter import filedialog as fd, messagebox
 from tkinter import Toplevel, Label, Button, Frame
 from PIL import Image, ImageTk
 import pandas as pd
-import os, subprocess, sys, pickle, numpy as np, face_recognition as fr
+import os, subprocess, pickle, numpy as np, face_recognition as fr
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from face_recognition_module import load_student_encodings, recognize_faces_in_image, preprocess_image
-from my_config import FACE_RECOGNITION
+from config import FACE_RECOGNITION, PATHS
 
 
 class SmartAttendanceApp:
@@ -228,7 +227,7 @@ class SmartAttendanceApp:
             self.create_absentees_from_all()
             return
 
-        with open("student_encodings.pkl", "wb") as f:
+        with open(PATHS['encodings_pkl'], "wb") as f:
             pickle.dump(self.student_encodings, f)
 
         presentees = []
@@ -348,7 +347,7 @@ class SmartAttendanceApp:
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to process image: {e}")
                 return
-            csv_file = "Student.csv"
+            csv_file = PATHS['student_csv']
             if os.path.exists(csv_file):
                 df = pd.read_csv(csv_file, dtype=str)
                 df["Reg No"] = df["Reg No"].str.strip()
@@ -382,7 +381,7 @@ class SmartAttendanceApp:
             else:
                 self.student_encodings[reg_no] = [encoding]
             try:
-                with open("student_encodings.pkl", "wb") as f:
+                with open(PATHS['encodings_pkl'], "wb") as f:
                     pickle.dump(self.student_encodings, f)
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to update encodings file: {e}")
