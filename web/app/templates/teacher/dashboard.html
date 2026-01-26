@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Teacher Dashboard - Smart Attendance{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <div class="col-md-6 col-lg-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3>0</h3>
+                    <p>Total Students</p>
+                </div>
+                <div class="icon bg-primary-light">
+                    <i class="bi bi-people"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3>0</h3>
+                    <p>Present Today</p>
+                </div>
+                <div class="icon bg-success-light">
+                    <i class="bi bi-check-circle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3>0</h3>
+                    <p>Absent Today</p>
+                </div>
+                <div class="icon bg-danger-light">
+                    <i class="bi bi-x-circle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3>0</h3>
+                    <p>Classes</p>
+                </div>
+                <div class="icon bg-warning-light">
+                    <i class="bi bi-book"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="table-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Recent Attendance</h5>
+                <a href="{{ url_for('teacher.attendance') }}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-plus-lg me-1"></i>Mark Attendance
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Class</th>
+                            <th>Present</th>
+                            <th>Absent</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">
+                                No attendance records yet. Start by marking attendance.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="form-card">
+            <h5 class="mb-3">Quick Actions</h5>
+            <div class="d-grid gap-2">
+                <a href="{{ url_for('teacher.attendance') }}" class="btn btn-primary">
+                    <i class="bi bi-camera me-2"></i>Mark Attendance
+                </a>
+                <a href="{{ url_for('teacher.students') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-person-plus me-2"></i>Add Student
+                </a>
+                <a href="#" class="btn btn-outline-secondary">
+                    <i class="bi bi-download me-2"></i>Export Report
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
