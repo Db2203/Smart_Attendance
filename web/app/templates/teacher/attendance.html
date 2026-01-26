@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Mark Attendance - Smart Attendance{% endblock %}
+{% block page_title %}Mark Attendance{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="form-card">
+            <h5 class="mb-4">Upload Class Photo</h5>
+            <form method="POST" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label class="form-label">Select Class</label>
+                    <select class="form-select">
+                        <option value="">Choose a class...</option>
+                    </select>
+                </div>
+
+                <div class="upload-area mb-3" id="upload-area">
+                    <i class="bi bi-cloud-upload"></i>
+                    <p class="mb-2">Drag and drop an image here, or click to browse</p>
+                    <p class="small text-muted">Supported formats: JPG, JPEG, PNG (Max 16MB)</p>
+                    <input type="file" id="file-input" class="d-none" accept="image/*">
+                </div>
+
+                <div id="preview-area" class="mb-3 d-none">
+                    <img id="image-preview" class="img-fluid rounded" style="max-height: 400px;">
+                    <button type="button" class="btn btn-outline-danger btn-sm mt-2" id="remove-image">
+                        <i class="bi bi-trash me-1"></i>Remove
+                    </button>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-cpu me-2"></i>Process & Mark Attendance
+                    </button>
+                    <button type="reset" class="btn btn-outline-secondary">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="form-card">
+            <h5 class="mb-3">Instructions</h5>
+            <ol class="ps-3">
+                <li class="mb-2">Select the class for which you want to mark attendance</li>
+                <li class="mb-2">Upload a clear photo of the classroom</li>
+                <li class="mb-2">The system will automatically detect and recognize faces</li>
+                <li class="mb-2">Review the results and confirm attendance</li>
+            </ol>
+            <hr>
+            <p class="small text-muted mb-0">
+                <i class="bi bi-info-circle me-1"></i>
+                For best results, ensure good lighting and that all faces are clearly visible.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const uploadArea = document.getElementById('upload-area');
+    const fileInput = document.getElementById('file-input');
+    const previewArea = document.getElementById('preview-area');
+    const imagePreview = document.getElementById('image-preview');
+    const removeBtn = document.getElementById('remove-image');
+
+    uploadArea.addEventListener('click', () => fileInput.click());
+
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.style.borderColor = '#1a237e';
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.style.borderColor = '#e0e0e0';
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.style.borderColor = '#e0e0e0';
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) {
+            handleFile(file);
+        }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            handleFile(file);
+        }
+    });
+
+    removeBtn.addEventListener('click', () => {
+        fileInput.value = '';
+        previewArea.classList.add('d-none');
+        uploadArea.classList.remove('d-none');
+    });
+
+    function handleFile(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            imagePreview.src = e.target.result;
+            uploadArea.classList.add('d-none');
+            previewArea.classList.remove('d-none');
+        };
+        reader.readAsDataURL(file);
+    }
+</script>
+{% endblock %}
