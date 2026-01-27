@@ -8,7 +8,7 @@
     <div class="col-12">
         <div class="table-card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">All Students</h5>
+                <h5 class="mb-0">All Students ({{ students|length }})</h5>
                 <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addStudentModal">
                     <i class="bi bi-plus-lg me-1"></i>Add Student
                 </button>
@@ -20,16 +20,58 @@
                             <th>Reg No</th>
                             <th>Name</th>
                             <th>Email</th>
-                            <th>Photo</th>
+                            <th>Face Encoding</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td colspan="5" class="text-center text-muted py-4">
-                                No students registered yet.
-                            </td>
-                        </tr>
+                        {% if students %}
+                            {% for student in students %}
+                            <tr>
+                                <td><strong>{{ student.reg_no }}</strong></td>
+                                <td>{{ student.name }}</td>
+                                <td>{{ student.email or '-' }}</td>
+                                <td>
+                                    {% if student.face_encoding %}
+                                        <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Registered</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark"><i class="bi bi-exclamation-circle me-1"></i>Not Set</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-outline-primary btn-sm btn-add-photo"
+                                            data-student-id="{{ student.id }}"
+                                            data-student-name="{{ student.name }}"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#addPhotoModal"
+                                            title="Add Photos">
+                                        <i class="bi bi-camera"></i>
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm btn-edit"
+                                            data-student-id="{{ student.id }}"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#editStudentModal"
+                                            title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger btn-sm btn-delete"
+                                            data-student-id="{{ student.id }}"
+                                            data-student-name="{{ student.name }}"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#deleteStudentModal"
+                                            title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">
+                                    No students registered yet. Click "Add Student" to get started.
+                                </td>
+                            </tr>
+                        {% endif %}
                     </tbody>
                 </table>
             </div>
@@ -41,35 +83,176 @@
 <div class="modal fade" id="addStudentModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Add New Student</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form>
+            <form method="POST" action="{{ url_for('teacher.add_student') }}" enctype="multipart/form-data">
+                {{ form.hidden_tag() }}
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Student</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Registration Number</label>
-                        <input type="text" class="form-control" placeholder="Enter reg. number">
+                        <label class="form-label">Registration Number <span class="text-danger">*</span></label>
+                        {{ form.reg_no(class="form-control", placeholder="e.g., 2023001") }}
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Full Name</label>
-                        <input type="text" class="form-control" placeholder="Enter student name">
+                        <label class="form-label">Full Name <span class="text-danger">*</span></label>
+                        {{ form.name(class="form-control", placeholder="Enter student name") }}
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Email</label>
-                        <input type="email" class="form-control" placeholder="Enter email">
+                        {{ form.email(class="form-control", placeholder="student@example.com") }}
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Face Photo</label>
-                        <input type="file" class="form-control" accept="image/*">
+                        <label class="form-label">Face Photos</label>
+                        <input type="file" name="photos" class="form-control" accept="image/*" multiple>
+                        <div class="form-text">Upload one or more clear photos of the student's face. Multiple photos improve recognition accuracy.</div>
                     </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary">Add Student</button>
-            </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Student</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
+
+<!-- Edit Student Modal -->
+<div class="modal fade" id="editStudentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" id="editStudentForm" enctype="multipart/form-data">
+                {{ form.hidden_tag() }}
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Student</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Registration Number <span class="text-danger">*</span></label>
+                        <input type="text" name="reg_no" id="edit_reg_no" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Full Name <span class="text-danger">*</span></label>
+                        <input type="text" name="name" id="edit_name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" id="edit_email" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Add More Photos</label>
+                        <input type="file" name="photos" class="form-control" accept="image/*" multiple>
+                        <div class="form-text">Upload additional photos to improve recognition. Existing photos will be kept.</div>
+                    </div>
+                    <div id="edit_encoding_status"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Photo Modal -->
+<div class="modal fade" id="addPhotoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" id="addPhotoForm" enctype="multipart/form-data">
+                {{ add_photo_form.hidden_tag() }}
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Photos for <span id="addPhotoStudentName"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Select Photos</label>
+                        <input type="file" name="photos" class="form-control" accept="image/*" multiple required>
+                        <div class="form-text">Upload clear photos of the student's face. Multiple photos from different angles improve accuracy.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Upload Photos</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteStudentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" id="deleteStudentForm">
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete Student</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete <strong id="deleteStudentName"></strong>?</p>
+                    <p class="text-danger mb-0"><i class="bi bi-exclamation-triangle me-1"></i>This will also delete all attendance records for this student. This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Delete Student</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Edit button click - load student data
+    document.querySelectorAll('.btn-edit').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const studentId = this.getAttribute('data-student-id');
+            const editForm = document.getElementById('editStudentForm');
+            editForm.action = '/teacher/students/' + studentId + '/edit';
+
+            // Fetch student data
+            fetch('/teacher/students/' + studentId)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('edit_reg_no').value = data.reg_no;
+                    document.getElementById('edit_name').value = data.name;
+                    document.getElementById('edit_email').value = data.email;
+
+                    // Show encoding status
+                    const statusDiv = document.getElementById('edit_encoding_status');
+                    if (data.has_encoding) {
+                        statusDiv.innerHTML = '<div class="alert alert-success py-2"><i class="bi bi-check-circle me-1"></i>Face encoding registered</div>';
+                    } else {
+                        statusDiv.innerHTML = '<div class="alert alert-warning py-2"><i class="bi bi-exclamation-circle me-1"></i>No face encoding - please upload photos</div>';
+                    }
+                });
+        });
+    });
+
+    // Delete button click - set form action and name
+    document.querySelectorAll('.btn-delete').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const studentId = this.getAttribute('data-student-id');
+            const studentName = this.getAttribute('data-student-name');
+            document.getElementById('deleteStudentForm').action = '/teacher/students/' + studentId + '/delete';
+            document.getElementById('deleteStudentName').textContent = studentName;
+        });
+    });
+
+    // Add Photo button click
+    document.querySelectorAll('.btn-add-photo').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const studentId = this.getAttribute('data-student-id');
+            const studentName = this.getAttribute('data-student-name');
+            document.getElementById('addPhotoForm').action = '/teacher/students/' + studentId + '/add-photo';
+            document.getElementById('addPhotoStudentName').textContent = studentName;
+        });
+    });
+});
+</script>
 {% endblock %}

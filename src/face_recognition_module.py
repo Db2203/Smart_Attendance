@@ -11,13 +11,13 @@ def preprocess_image(image):
     pil_img = Image.fromarray(image)
     enhancer = ImageEnhance.Brightness(pil_img)
     pil_img = enhancer.enhance(IMAGE_ENHANCEMENT['brightness'])
-    
+
     enhancer = ImageEnhance.Contrast(pil_img)
     pil_img = enhancer.enhance(IMAGE_ENHANCEMENT['contrast'])
-    
+
     enhancer = ImageEnhance.Sharpness(pil_img)
     pil_img = enhancer.enhance(IMAGE_ENHANCEMENT['sharpness'])
-    
+
     return np.array(pil_img)
 
 
@@ -52,11 +52,11 @@ def load_student_encodings(student_csv=None, force_refresh=False):
 
 def precompute_student_encodings(df):
     encodings_dict = {}
-    
+
     for _, row in df.iterrows():
         stud_paths = row['File Paths'].split(',')
         all_encodings = []
-        
+
         for image_path in stud_paths:
             image_path = image_path.strip()
             if not os.path.exists(image_path):
@@ -70,7 +70,7 @@ def precompute_student_encodings(df):
                     all_encodings.extend(encodings)
             except Exception as e:
                 print(f"[Warning] Error processing {image_path}: {e}")
-        
+
         encodings_dict[row['Reg No']] = all_encodings
 
     with open(PATHS['encodings_pkl'], "wb") as f:
@@ -82,11 +82,11 @@ def precompute_student_encodings(df):
 
 def recognize_faces_in_image(image_path, student_encodings, reg_no_to_name):
     logs = []
-    
+
     if not os.path.exists(image_path):
         logs.append(f"[Error] Image file not found: {image_path}")
         return set(), logs, [], None
-    
+
     try:
         unknown_image = fr.load_image_file(image_path)
         unknown_image = preprocess_image(unknown_image)
@@ -97,7 +97,7 @@ def recognize_faces_in_image(image_path, student_encodings, reg_no_to_name):
     except Exception as e:
         logs.append(f"[Error] Failed to process image: {e}")
         return set(), logs, [], None
-    
+
     if not unknown_encodings:
         logs.append("[Error] No faces detected in the image.")
         return set(), logs, [], unknown_image
