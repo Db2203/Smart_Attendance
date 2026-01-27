@@ -367,3 +367,157 @@ body {
     color: var(--text-muted);
     margin: 0;
 }
+
+/* ===== Manipal-Style Login Page ===== */
+.manipal-login {
+    min-height: 100vh;
+    background: url('../images/campus-bg.jpg') center/cover no-repeat fixed;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.manipal-login::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.1);
+    z-index: 0;
+}
+
+.manipal-logo {
+    position: absolute;
+    top: 20px;
+    left: 30px;
+    z-index: 10;
+}
+
+.manipal-logo img {
+    height: 60px;
+    width: auto;
+}
+
+.manipal-login-card {
+    position: absolute;
+    right: 8%;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 320px;
+    background: rgba(255, 255, 255, 0.97);
+    border-radius: 4px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    z-index: 10;
+}
+
+.manipal-card-header {
+    background: linear-gradient(135deg, #8B5A2B 0%, #A0522D 100%);
+    color: white;
+    padding: 14px 20px;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.manipal-card-body {
+    padding: 25px 20px;
+}
+
+.manipal-form-group {
+    margin-bottom: 15px;
+}
+
+.manipal-form-control {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-size: 0.9rem;
+    transition: border-color 0.2s;
+}
+
+.manipal-form-control:focus {
+    outline: none;
+    border-color: #8B5A2B;
+    box-shadow: 0 0 0 2px rgba(139, 90, 43, 0.1);
+}
+
+.manipal-form-control::placeholder {
+    color: #999;
+}
+
+.manipal-forgot-link {
+    display: block;
+    color: #0066cc;
+    font-size: 0.85rem;
+    text-decoration: none;
+    margin-bottom: 15px;
+}
+
+.manipal-forgot-link:hover {
+    text-decoration: underline;
+}
+
+.manipal-btn-login {
+    background: linear-gradient(135deg, #d45500 0%, #ff6600 100%);
+    color: white;
+    border: none;
+    padding: 8px 24px;
+    border-radius: 3px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.manipal-btn-login:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(212, 85, 0, 0.4);
+}
+
+.manipal-register-link {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+    text-align: center;
+    font-size: 0.85rem;
+}
+
+.manipal-register-link a {
+    color: #0066cc;
+    text-decoration: none;
+}
+
+.manipal-register-link a:hover {
+    text-decoration: underline;
+}
+
+.manipal-footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.6);
+    color: rgba(255, 255, 255, 0.9);
+    text-align: center;
+    padding: 10px;
+    font-size: 0.8rem;
+    z-index: 10;
+}
+
+/* Responsive adjustments for Manipal login */
+@media (max-width: 768px) {
+    .manipal-login-card {
+        right: 50%;
+        transform: translate(50%, -50%);
+        width: 90%;
+        max-width: 320px;
+    }
+
+    .manipal-logo {
+        left: 50%;
+        transform: translateX(-50%);
+    }
+}

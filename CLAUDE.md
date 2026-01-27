@@ -4,16 +4,30 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Running the Application
 
+### Desktop GUI (Tkinter)
 ```bash
 python src/main.py
 ```
+
+### Web Application (Flask)
+```bash
+cd web
+python run.py
+```
+Access at http://127.0.0.1:5000
 
 Run from the project root directory.
 
 ## Dependencies
 
+### Core
 ```bash
 pip install face-recognition pandas pillow numpy
+```
+
+### Web Application
+```bash
+pip install flask flask-login flask-wtf flask-sqlalchemy email-validator werkzeug
 ```
 
 Note: `tkinter` is included with Python on Windows. On Linux, install `python3-tk`.
@@ -24,13 +38,25 @@ The `face_recognition` library requires dlib, which may need CMake and a C++ com
 
 ```
 Smart_Attendance/
-├── src/                    # Python source code
-│   ├── main.py             # Entry point
+├── src/                    # Desktop app source code
+│   ├── main.py             # Desktop GUI entry point
 │   ├── face_recognition_module.py
 │   ├── config.py           # Centralized configuration
 │   ├── attendance_db.py    # SQLite helper
 │   └── GUI_app.py          # Legacy GUI version
-├── assets/                 # GUI images (logo, buttons)
+├── web/                    # Flask web application
+│   ├── run.py              # Web app entry point
+│   ├── app/
+│   │   ├── __init__.py     # App factory
+│   │   ├── models.py       # SQLAlchemy models
+│   │   ├── auth/           # Authentication blueprint
+│   │   ├── teacher/        # Teacher routes & forms
+│   │   ├── student/        # Student routes
+│   │   ├── face_recognition/  # FR service wrapper
+│   │   ├── templates/      # Jinja2 templates
+│   │   └── static/         # CSS, JS, images
+│   └── instance/           # Database (gitignored)
+├── assets/                 # Desktop GUI images
 ├── data/                   # Data files
 │   ├── Student.csv         # Student registry
 │   ├── student_encodings.pkl
@@ -69,3 +95,33 @@ Smart_Attendance/
 - Rejected face encodings are tracked in `self.rejections` to avoid re-prompting for the same face
 - Image preprocessing (brightness, contrast, sharpness enhancement) is applied to both reference and input images
 - All paths use relative paths from project root via `PATHS` config
+
+## Web Application
+
+### Features
+- **Authentication**: Login/register with role-based access (teacher/student)
+- **Teacher Dashboard**: Mark attendance via photo upload, manage students
+- **Student Dashboard**: View attendance history and statistics
+- **Face Recognition**: Integrated FR service for attendance marking
+- **Student Management**: Add/edit/delete students with photo uploads
+
+### Tech Stack
+- Flask with Blueprints
+- Flask-Login for authentication
+- Flask-SQLAlchemy with SQLite
+- Flask-WTF for forms
+- Bootstrap 5 + custom CSS
+
+### UI Theme
+- Login page: Manipal-style with full-screen campus background, logo, and semi-transparent card
+- Dashboard: Sidebar navigation with role-based menus
+- Custom images required:
+  - `web/app/static/images/campus-bg.jpg` - Login background
+  - `web/app/static/images/logo.png` - Logo (top-left of login)
+
+### Key Routes
+- `/auth/login`, `/auth/register` - Authentication
+- `/teacher/dashboard` - Teacher home
+- `/teacher/attendance` - Upload photo & mark attendance
+- `/teacher/students` - CRUD student management
+- `/student/dashboard` - Student home
