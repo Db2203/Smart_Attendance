@@ -6,9 +6,9 @@ IMAGE_ENHANCEMENT = {
 
 FACE_RECOGNITION = {
     'model': 'cnn',
-    'threshold': 0.5,
+    'threshold': 0.52,          # Slightly relaxed to catch more matches
     'resize_scale': 0.25,
-    'confirmation_margin': 0.1
+    'confirmation_margin': 0.12  # Wider margin for close matches needing confirmation
 }
 
 # All paths relative to project root

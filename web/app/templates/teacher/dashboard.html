@@ -9,7 +9,7 @@
         <div class="stat-card">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h3>0</h3>
+                    <h3>{{ total_students }}</h3>
                     <p>Total Students</p>
                 </div>
                 <div class="icon bg-primary-light">
@@ -22,7 +22,7 @@
         <div class="stat-card">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h3>0</h3>
+                    <h3>{{ recent_attendance|selectattr('status', 'equalto', 'present')|list|length }}</h3>
                     <p>Present Today</p>
                 </div>
                 <div class="icon bg-success-light">
@@ -35,7 +35,7 @@
         <div class="stat-card">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h3>0</h3>
+                    <h3>{{ total_students - recent_attendance|selectattr('status', 'equalto', 'present')|list|length }}</h3>
                     <p>Absent Today</p>
                 </div>
                 <div class="icon bg-danger-light">
@@ -48,7 +48,7 @@
         <div class="stat-card">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h3>0</h3>
+                    <h3>{{ total_classes }}</h3>
                     <p>Classes</p>
                 </div>
                 <div class="icon bg-warning-light">
@@ -73,18 +73,42 @@
                     <thead>
                         <tr>
                             <th>Date</th>
+                            <th>Student</th>
                             <th>Class</th>
-                            <th>Present</th>
-                            <th>Absent</th>
-                            <th>Actions</th>
+                            <th>Status</th>
+                            <th>Confidence</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td colspan="5" class="text-center text-muted py-4">
-                                No attendance records yet. Start by marking attendance.
-                            </td>
-                        </tr>
+                        {% if recent_attendance %}
+                            {% for record in recent_attendance %}
+                            <tr>
+                                <td>{{ record.date.strftime('%b %d, %Y') }}</td>
+                                <td>{{ record.student.name if record.student else 'N/A' }}</td>
+                                <td>{{ record.class_.name if record.class_ else 'N/A' }}</td>
+                                <td>
+                                    {% if record.status == 'present' %}
+                                        <span class="badge bg-success">Present</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Absent</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if record.confidence %}
+                                        <span class="badge bg-secondary">{{ record.confidence|round(1) }}%</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">
+                                    No attendance records yet. Start by marking attendance.
+                                </td>
+                            </tr>
+                        {% endif %}
                     </tbody>
                 </table>
             </div>
@@ -104,6 +128,22 @@
                     <i class="bi bi-download me-2"></i>Export Report
                 </a>
             </div>
+        </div>
+
+        <div class="form-card mt-4">
+            <h5 class="mb-3">Your Classes</h5>
+            {% if classes %}
+                <ul class="list-group list-group-flush">
+                    {% for cls in classes %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        {{ cls.name }}
+                        <span class="badge bg-primary">{{ cls.code }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-muted small">No classes assigned yet.</p>
+            {% endif %}
         </div>
     </div>
 </div>
