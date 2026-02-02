@@ -11,19 +11,19 @@
 <div class="row g-4 mb-4">
     <div class="col-md-4">
         <div class="stat-card text-center">
-            <h3 class="text-primary">0%</h3>
+            <h3 class="text-primary">{{ overall_percentage }}%</h3>
             <p>Overall Attendance</p>
         </div>
     </div>
     <div class="col-md-4">
         <div class="stat-card text-center">
-            <h3 class="text-success">0</h3>
+            <h3 class="text-success">{{ total_present }}</h3>
             <p>Total Present Days</p>
         </div>
     </div>
     <div class="col-md-4">
         <div class="stat-card text-center">
-            <h3 class="text-danger">0</h3>
+            <h3 class="text-danger">{{ total_classes - total_present }}</h3>
             <p>Total Absent Days</p>
         </div>
     </div>
@@ -32,8 +32,8 @@
 <div class="row g-4">
     <div class="col-lg-8">
         <div class="form-card">
-            <h5 class="mb-4">Monthly Attendance Trend</h5>
-            <canvas id="attendanceChart" height="100"></canvas>
+            <h5 class="mb-4">Subject-wise Attendance</h5>
+            <canvas id="barChart" height="100"></canvas>
         </div>
     </div>
     <div class="col-lg-4">
@@ -48,13 +48,14 @@
     <div class="col-12">
         <div class="table-card">
             <div class="card-header">
-                <h5 class="mb-0">Class-wise Attendance</h5>
+                <h5 class="mb-0">Subject-wise Attendance</h5>
             </div>
             <div class="table-responsive">
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th>Class</th>
+                            <th>Subject</th>
+                            <th>Code</th>
                             <th>Total Classes</th>
                             <th>Present</th>
                             <th>Absent</th>
@@ -62,11 +63,34 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td colspan="5" class="text-center text-muted py-4">
-                                No class data available.
-                            </td>
-                        </tr>
+                        {% if class_stats %}
+                            {% for stat in class_stats %}
+                            <tr>
+                                <td><strong>{{ stat.class.name }}</strong></td>
+                                <td><span class="badge bg-secondary">{{ stat.class.code }}</span></td>
+                                <td>{{ stat.total }}</td>
+                                <td><span class="text-success">{{ stat.present }}</span></td>
+                                <td><span class="text-danger">{{ stat.absent }}</span></td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                            <div class="progress-bar {% if stat.percentage >= 75 %}bg-success{% elif stat.percentage >= 50 %}bg-warning{% else %}bg-danger{% endif %}"
+                                                 style="width: {{ stat.percentage }}%"></div>
+                                        </div>
+                                        <span class="{% if stat.percentage >= 75 %}text-success{% elif stat.percentage >= 50 %}text-warning{% else %}text-danger{% endif %}">
+                                            {{ stat.percentage }}%
+                                        </span>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    No attendance data available yet.
+                                </td>
+                            </tr>
+                        {% endif %}
                     </tbody>
                 </table>
             </div>
@@ -77,19 +101,26 @@
 
 {% block extra_js %}
 <script>
-    // Monthly Attendance Chart
-    const ctx = document.getElementById('attendanceChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'line',
+    // Subject-wise Bar Chart
+    const barCtx = document.getElementById('barChart').getContext('2d');
+    new Chart(barCtx, {
+        type: 'bar',
         data: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            labels: [{% for stat in class_stats %}'{{ stat.class.code }}'{% if not loop.last %}, {% endif %}{% endfor %}],
             datasets: [{
                 label: 'Attendance %',
-                data: [0, 0, 0, 0, 0, 0],
-                borderColor: '#1a237e',
-                backgroundColor: 'rgba(26, 35, 126, 0.1)',
-                fill: true,
-                tension: 0.4
+                data: [{% for stat in class_stats %}{{ stat.percentage }}{% if not loop.last %}, {% endif %}{% endfor %}],
+                backgroundColor: [
+                    {% for stat in class_stats %}
+                    '{% if stat.percentage >= 75 %}rgba(76, 175, 80, 0.8){% elif stat.percentage >= 50 %}rgba(255, 152, 0, 0.8){% else %}rgba(244, 67, 54, 0.8){% endif %}'{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                ],
+                borderColor: [
+                    {% for stat in class_stats %}
+                    '{% if stat.percentage >= 75 %}#4caf50{% elif stat.percentage >= 50 %}#ff9800{% else %}#f44336{% endif %}'{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                ],
+                borderWidth: 1
             }]
         },
         options: {
@@ -102,7 +133,12 @@
             scales: {
                 y: {
                     beginAtZero: true,
-                    max: 100
+                    max: 100,
+                    ticks: {
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    }
                 }
             }
         }
@@ -115,7 +151,7 @@
         data: {
             labels: ['Present', 'Absent'],
             datasets: [{
-                data: [0, 100],
+                data: [{{ total_present }}, {{ total_classes - total_present }}],
                 backgroundColor: ['#4caf50', '#f44336']
             }]
         },
