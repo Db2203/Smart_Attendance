@@ -9,7 +9,7 @@
         <div class="stat-card">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h3>0%</h3>
+                    <h3>{{ attendance_rate }}%</h3>
                     <p>Attendance Rate</p>
                 </div>
                 <div class="icon bg-primary-light">
@@ -22,7 +22,7 @@
         <div class="stat-card">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h3>0</h3>
+                    <h3>{{ present_count }}</h3>
                     <p>Days Present</p>
                 </div>
                 <div class="icon bg-success-light">
@@ -35,7 +35,7 @@
         <div class="stat-card">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h3>0</h3>
+                    <h3>{{ absent_count }}</h3>
                     <p>Days Absent</p>
                 </div>
                 <div class="icon bg-danger-light">
@@ -48,7 +48,7 @@
         <div class="stat-card">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h3>0</h3>
+                    <h3>{{ classes_count }}</h3>
                     <p>Classes Enrolled</p>
                 </div>
                 <div class="icon bg-warning-light">
@@ -71,24 +71,43 @@
                     <thead>
                         <tr>
                             <th>Date</th>
-                            <th>Class</th>
+                            <th>Subject</th>
                             <th>Status</th>
                             <th>Time</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td colspan="4" class="text-center text-muted py-4">
-                                No attendance records yet.
-                            </td>
-                        </tr>
+                        {% if recent_attendance %}
+                            {% for record in recent_attendance %}
+                            <tr>
+                                <td>{{ record.date.strftime('%d %b %Y') }}</td>
+                                <td>{{ record.class_.name }}</td>
+                                <td>
+                                    {% if record.status == 'present' %}
+                                        <span class="badge bg-success">Present</span>
+                                    {% elif record.status == 'absent' %}
+                                        <span class="badge bg-danger">Absent</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">{{ record.status|title }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ record.created_at.strftime('%I:%M %p') if record.created_at else '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">
+                                    No attendance records yet.
+                                </td>
+                            </tr>
+                        {% endif %}
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
     <div class="col-lg-4">
-        <div class="form-card">
+        <div class="form-card mb-4">
             <h5 class="mb-3">My Profile</h5>
             <div class="text-center mb-3">
                 <div class="bg-primary-light rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
@@ -108,6 +127,23 @@
                     <i class="bi bi-graph-up me-1"></i>View Statistics
                 </a>
             </div>
+        </div>
+
+        <!-- Enrolled Classes -->
+        <div class="form-card">
+            <h5 class="mb-3">My Subjects</h5>
+            {% if enrolled_classes %}
+                <ul class="list-group list-group-flush">
+                    {% for cls in enrolled_classes %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <span>{{ cls.name }}</span>
+                        <span class="badge bg-primary">{{ cls.code }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-muted small">Not enrolled in any classes yet.</p>
+            {% endif %}
         </div>
     </div>
 </div>
