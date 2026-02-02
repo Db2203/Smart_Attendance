@@ -1,0 +1,801 @@
+/* SLCM (Student Life Cycle Management) Portal Style - Exact Clone */
+
+:root {
+    --slcm-red: #8B0000;
+    --slcm-olive: #4a5a3c;
+    --slcm-olive-dark: #3d4a32;
+    --slcm-olive-header: #5a6a4a;
+    --slcm-orange: #cc6600;
+    --slcm-orange-light: #ff8c00;
+    --slcm-dark-header: #4a4a3a;
+    --slcm-table-header: #5a5a4a;
+    --slcm-sidebar-bg: #f0f0e8;
+    --slcm-sidebar-header: #4a5a3c;
+    --slcm-white: #ffffff;
+    --slcm-light-bg: #f5f5f0;
+    --slcm-border: #ccc;
+    --slcm-text: #333;
+    --slcm-text-muted: #666;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: url('../images/campus-bg.jpg') center bottom/100% auto no-repeat fixed;
+    background-color: #e8e8e0;
+    color: var(--slcm-text);
+    min-height: 100vh;
+    font-size: 13px;
+}
+
+/* ===== Announcement Bar ===== */
+.slcm-announcement-bar {
+    background-color: var(--slcm-red);
+    color: white;
+    padding: 6px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+}
+
+.slcm-announcement-bar .announcement-left {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.slcm-announcement-bar .announcement-left a {
+    color: white;
+    text-decoration: none;
+}
+
+.slcm-announcement-bar .announcement-left i {
+    font-size: 12px;
+}
+
+.slcm-announcement-bar .user-info {
+    color: white;
+    font-size: 13px;
+}
+
+/* ===== Header ===== */
+.slcm-header {
+    background-color: var(--slcm-white);
+    padding: 8px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #ddd;
+}
+
+.slcm-logo {
+    display: flex;
+    align-items: center;
+}
+
+.slcm-logo img {
+    height: 45px;
+    width: auto;
+}
+
+.slcm-logo-placeholder {
+    height: 45px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.slcm-logo-placeholder .logo-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #1a3a6e, #2a4a8e);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 11px;
+}
+
+.slcm-logo-placeholder .logo-text {
+    font-size: 18px;
+    font-weight: bold;
+    color: #1a3a6e;
+    line-height: 1.1;
+}
+
+.slcm-logo-placeholder .logo-text small {
+    display: block;
+    font-size: 9px;
+    font-weight: normal;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ===== Navigation Tabs ===== */
+.slcm-nav-tabs {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.slcm-nav-tab {
+    background-color: var(--slcm-olive);
+    color: white;
+    padding: 8px 15px;
+    text-decoration: none;
+    font-size: 12px;
+    border-radius: 3px 3px 0 0;
+    transition: background-color 0.2s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 110px;
+}
+
+.slcm-nav-tab:hover {
+    background-color: var(--slcm-olive-dark);
+    color: white;
+}
+
+.slcm-nav-tab.active {
+    background-color: var(--slcm-olive-header);
+    color: white;
+}
+
+/* ===== Profile Dropdown ===== */
+.slcm-profile-section {
+    display: flex;
+    align-items: center;
+}
+
+.slcm-profile-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--slcm-text);
+    padding: 5px 10px;
+}
+
+.slcm-profile-btn:hover {
+    background-color: #f0f0f0;
+    border-radius: 3px;
+}
+
+.slcm-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    min-width: 150px;
+    z-index: 1000;
+    display: none;
+}
+
+.slcm-dropdown-menu.show {
+    display: block;
+}
+
+.slcm-dropdown-item {
+    display: block;
+    padding: 8px 12px;
+    color: var(--slcm-text);
+    text-decoration: none;
+    font-size: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.slcm-dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.slcm-dropdown-item:hover {
+    background-color: #f5f5f5;
+}
+
+/* ===== Breadcrumb ===== */
+.slcm-breadcrumb {
+    background-color: var(--slcm-light-bg);
+    padding: 8px 15px;
+    border-bottom: 1px solid #ddd;
+}
+
+.slcm-breadcrumb a {
+    color: var(--slcm-orange);
+    text-decoration: none;
+    font-size: 12px;
+}
+
+.slcm-breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+.slcm-breadcrumb i {
+    margin-right: 5px;
+}
+
+/* ===== Main Layout ===== */
+.slcm-main-wrapper {
+    display: flex;
+    align-items: flex-start;
+}
+
+/* ===== Sidebar ===== */
+.slcm-sidebar {
+    width: 160px;
+    background-color: white;
+    flex-shrink: 0;
+    border-right: 1px solid #ccc;
+}
+
+.slcm-sidebar-header {
+    background-color: var(--slcm-sidebar-header);
+    color: white;
+    padding: 10px 12px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.slcm-sidebar-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.slcm-sidebar-item {
+    border-bottom: 1px solid #ddd;
+}
+
+.slcm-sidebar-link {
+    display: block;
+    padding: 10px 12px;
+    color: var(--slcm-text);
+    text-decoration: none;
+    font-size: 12px;
+    background-color: white;
+    border-left: 4px solid transparent;
+    transition: all 0.15s;
+}
+
+.slcm-sidebar-link:hover {
+    background-color: #f8f8f0;
+}
+
+.slcm-sidebar-link.active {
+    background-color: #fff8e8;
+    border-left-color: var(--slcm-orange);
+    color: var(--slcm-text);
+    position: relative;
+}
+
+.slcm-sidebar-link.active::before {
+    content: '';
+    position: absolute;
+    left: -4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-top: 6px solid transparent;
+    border-bottom: 6px solid transparent;
+    border-left: 6px solid var(--slcm-orange);
+}
+
+/* ===== Content Area ===== */
+.slcm-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: white;
+}
+
+.slcm-content-header {
+    background-color: var(--slcm-dark-header);
+    color: white;
+    padding: 10px 15px;
+    font-size: 14px;
+    font-weight: normal;
+}
+
+.slcm-content-body {
+    background-color: white;
+    padding: 15px;
+}
+
+/* ===== Semester Selector Row ===== */
+.slcm-semester-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #ddd;
+}
+
+.slcm-semester-row label {
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--slcm-text);
+    min-width: 70px;
+}
+
+.slcm-semester-select {
+    flex: 1;
+    max-width: 400px;
+    padding: 6px 10px;
+    border: 1px solid #999;
+    background-color: var(--slcm-olive);
+    color: white;
+    font-size: 12px;
+    border-radius: 2px;
+}
+
+.slcm-action-buttons {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.slcm-btn-show {
+    background-color: var(--slcm-olive);
+    color: white;
+    border: none;
+    padding: 6px 20px;
+    font-size: 12px;
+    cursor: pointer;
+    border-radius: 2px;
+}
+
+.slcm-btn-show:hover {
+    background-color: var(--slcm-olive-dark);
+}
+
+.slcm-btn-print {
+    background-color: var(--slcm-olive);
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    border-radius: 2px;
+}
+
+/* ===== Student Info Row ===== */
+.slcm-student-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+    margin-bottom: 15px;
+    font-size: 12px;
+}
+
+.slcm-info-item {
+    display: flex;
+    align-items: center;
+}
+
+.slcm-info-label {
+    font-weight: bold;
+    color: var(--slcm-text);
+    margin-right: 8px;
+}
+
+.slcm-info-separator {
+    color: var(--slcm-orange);
+    margin-right: 8px;
+    font-weight: bold;
+}
+
+.slcm-info-value {
+    color: var(--slcm-text);
+}
+
+/* ===== SLCM Table ===== */
+.slcm-table-container {
+    overflow-x: auto;
+}
+
+.slcm-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.slcm-table th {
+    background-color: var(--slcm-table-header);
+    color: white;
+    padding: 10px 8px;
+    text-align: center;
+    font-weight: normal;
+    font-size: 12px;
+    border: 1px solid #4a4a3a;
+}
+
+.slcm-table td {
+    padding: 10px 8px;
+    border: 1px solid #ddd;
+    text-align: center;
+    vertical-align: middle;
+    background-color: white;
+}
+
+.slcm-table tbody tr:nth-child(even) td {
+    background-color: #f8f8f5;
+}
+
+.slcm-table tbody tr:hover td {
+    background-color: #f0f0e8;
+}
+
+/* Subject code column - left aligned */
+.slcm-table td.subject-code {
+    text-align: left;
+    padding-left: 15px;
+}
+
+/* ===== Teacher Dashboard Styles ===== */
+.slcm-dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.slcm-stat-card {
+    background: white;
+    border: 1px solid #ddd;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.slcm-stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.slcm-stat-icon.green {
+    background-color: var(--slcm-olive);
+    color: white;
+}
+
+.slcm-stat-icon.orange {
+    background-color: var(--slcm-orange);
+    color: white;
+}
+
+.slcm-stat-icon.blue {
+    background-color: #336699;
+    color: white;
+}
+
+.slcm-stat-content h3 {
+    font-size: 1.5rem;
+    margin: 0;
+    color: var(--slcm-text);
+}
+
+.slcm-stat-content p {
+    margin: 0;
+    font-size: 12px;
+    color: var(--slcm-text-muted);
+}
+
+/* ===== Action Cards ===== */
+.slcm-action-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.slcm-action-card {
+    background: white;
+    border: 1px solid #ddd;
+    padding: 20px;
+    text-align: center;
+}
+
+.slcm-action-card .icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: var(--slcm-olive);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.slcm-action-card h4 {
+    margin: 0 0 8px;
+    font-size: 14px;
+    color: var(--slcm-text);
+}
+
+.slcm-action-card p {
+    margin: 0 0 15px;
+    font-size: 12px;
+    color: var(--slcm-text-muted);
+}
+
+.slcm-btn {
+    display: inline-block;
+    padding: 8px 20px;
+    font-size: 12px;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    border-radius: 2px;
+}
+
+.slcm-btn-primary {
+    background-color: var(--slcm-olive);
+    color: white;
+}
+
+.slcm-btn-primary:hover {
+    background-color: var(--slcm-olive-dark);
+    color: white;
+}
+
+.slcm-btn-orange {
+    background-color: var(--slcm-orange);
+    color: white;
+}
+
+.slcm-btn-orange:hover {
+    background-color: var(--slcm-orange-light);
+    color: white;
+}
+
+/* ===== Upload Area ===== */
+.slcm-upload-area {
+    border: 2px dashed #999;
+    padding: 40px;
+    text-align: center;
+    background-color: #fafafa;
+    cursor: pointer;
+    margin-bottom: 15px;
+}
+
+.slcm-upload-area:hover {
+    border-color: var(--slcm-olive);
+    background-color: #f5f5f0;
+}
+
+.slcm-upload-area i {
+    font-size: 3rem;
+    color: #999;
+    margin-bottom: 10px;
+}
+
+.slcm-upload-area p {
+    margin: 5px 0;
+    color: #666;
+    font-size: 12px;
+}
+
+/* ===== Form Styles ===== */
+.slcm-form-group {
+    margin-bottom: 15px;
+}
+
+.slcm-form-label {
+    display: block;
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: var(--slcm-text);
+}
+
+.slcm-form-control {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #999;
+    font-size: 12px;
+    border-radius: 2px;
+}
+
+.slcm-form-control:focus {
+    outline: none;
+    border-color: var(--slcm-olive);
+}
+
+.slcm-form-select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #999;
+    font-size: 12px;
+    background-color: white;
+    border-radius: 2px;
+}
+
+/* ===== Alerts ===== */
+.slcm-alert {
+    padding: 10px 15px;
+    margin-bottom: 15px;
+    font-size: 12px;
+    border: 1px solid;
+}
+
+.slcm-alert-success {
+    background-color: #dff0d8;
+    color: #3c763d;
+    border-color: #d6e9c6;
+}
+
+.slcm-alert-danger {
+    background-color: #f2dede;
+    color: #a94442;
+    border-color: #ebccd1;
+}
+
+.slcm-alert-warning {
+    background-color: #fcf8e3;
+    color: #8a6d3b;
+    border-color: #faebcc;
+}
+
+.slcm-alert-info {
+    background-color: #d9edf7;
+    color: #31708f;
+    border-color: #bce8f1;
+}
+
+/* ===== Results Grid ===== */
+.slcm-results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.slcm-result-card {
+    background: white;
+    border: 1px solid #ddd;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.slcm-result-card.confirmed {
+    border-left: 3px solid var(--slcm-olive);
+}
+
+.slcm-result-card.pending {
+    border-left: 3px solid var(--slcm-orange);
+}
+
+.slcm-result-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    font-size: 1.2rem;
+}
+
+.slcm-result-info {
+    flex: 1;
+}
+
+.slcm-result-info h4 {
+    font-size: 13px;
+    margin: 0 0 3px;
+}
+
+.slcm-result-info p {
+    font-size: 11px;
+    margin: 0;
+    color: #666;
+}
+
+.slcm-result-badge {
+    padding: 3px 8px;
+    font-size: 10px;
+    border-radius: 10px;
+}
+
+.slcm-result-badge.confirmed {
+    background-color: rgba(74, 90, 60, 0.1);
+    color: var(--slcm-olive);
+}
+
+.slcm-result-badge.pending {
+    background-color: rgba(204, 102, 0, 0.1);
+    color: var(--slcm-orange);
+}
+
+/* ===== Section Title ===== */
+.slcm-section-title {
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--slcm-text);
+    margin: 20px 0 10px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #ddd;
+}
+
+/* ===== No Data ===== */
+.slcm-no-data {
+    text-align: center;
+    padding: 40px;
+    color: #999;
+}
+
+.slcm-no-data i {
+    font-size: 3rem;
+    margin-bottom: 10px;
+}
+
+.slcm-no-data p {
+    margin: 0;
+    font-size: 13px;
+}
+
+/* ===== Modal Overrides ===== */
+.modal-header {
+    background-color: var(--slcm-dark-header);
+    color: white;
+    padding: 10px 15px;
+}
+
+.modal-title {
+    font-size: 14px;
+}
+
+.modal-body {
+    padding: 15px;
+}
+
+.modal-footer {
+    padding: 10px 15px;
+    border-top: 1px solid #ddd;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+    .slcm-sidebar {
+        display: none;
+    }
+
+    .slcm-nav-tabs {
+        display: none;
+    }
+
+    .slcm-semester-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .slcm-student-info {
+        flex-direction: column;
+        gap: 10px;
+    }
+}

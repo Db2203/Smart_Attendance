@@ -1,0 +1,247 @@
+{% extends "slcm_base.html" %}
+
+{% block title %}SLCM - Student Management{% endblock %}
+
+{% block main_content %}
+<!-- Sidebar -->
+<aside class="slcm-sidebar">
+    <div class="slcm-sidebar-header">Faculty Portal</div>
+    <ul class="slcm-sidebar-menu">
+        <li class="slcm-sidebar-item">
+            <a href="{{ url_for('teacher.dashboard') }}" class="slcm-sidebar-link">Dashboard</a>
+        </li>
+        <li class="slcm-sidebar-item">
+            <a href="{{ url_for('teacher.attendance') }}" class="slcm-sidebar-link">Mark Attendance</a>
+        </li>
+        <li class="slcm-sidebar-item">
+            <a href="{{ url_for('teacher.students') }}" class="slcm-sidebar-link active">Student Management</a>
+        </li>
+        <li class="slcm-sidebar-item">
+            <a href="#" class="slcm-sidebar-link">Class Records</a>
+        </li>
+        <li class="slcm-sidebar-item">
+            <a href="#" class="slcm-sidebar-link">Reports</a>
+        </li>
+        <li class="slcm-sidebar-item">
+            <a href="#" class="slcm-sidebar-link">Settings</a>
+        </li>
+    </ul>
+</aside>
+
+<!-- Content -->
+<main class="slcm-content">
+    <div class="slcm-content-header">Student Management</div>
+    <div class="slcm-content-body">
+        <!-- Action Bar -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div class="slcm-dashboard-grid" style="margin: 0; gap: 15px;">
+                <div class="slcm-stat-card" style="padding: 12px 20px;">
+                    <div class="slcm-stat-icon green" style="width: 40px; height: 40px; font-size: 1.2rem;">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+                    <div class="slcm-stat-content">
+                        <h3 style="font-size: 1.2rem;">{{ students|length }}</h3>
+                        <p>Total</p>
+                    </div>
+                </div>
+                <div class="slcm-stat-card" style="padding: 12px 20px;">
+                    <div class="slcm-stat-icon blue" style="width: 40px; height: 40px; font-size: 1.2rem;">
+                        <i class="bi bi-person-check-fill"></i>
+                    </div>
+                    <div class="slcm-stat-content">
+                        <h3 style="font-size: 1.2rem;">{{ students|selectattr('face_encoding')|list|length }}</h3>
+                        <p>With Face Data</p>
+                    </div>
+                </div>
+            </div>
+            <button class="slcm-btn slcm-btn-primary" data-bs-toggle="modal" data-bs-target="#addStudentModal">
+                <i class="bi bi-person-plus"></i> Add Student
+            </button>
+        </div>
+
+        <!-- Students Table -->
+        <div class="slcm-table-container">
+            <table class="slcm-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">Photo</th>
+                        <th>Reg No</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Face Data</th>
+                        <th style="width: 150px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if students %}
+                        {% for student in students %}
+                        <tr>
+                            <td>
+                                <div style="width: 35px; height: 35px; border-radius: 50%; overflow: hidden; background: #f0f0f0; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                                    {% if student.photo_path %}
+                                    <img src="{{ url_for('static', filename=student.photo_path) }}" style="width: 100%; height: 100%; object-fit: cover;">
+                                    {% else %}
+                                    <i class="bi bi-person-fill" style="color: #999;"></i>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>{{ student.reg_no }}</td>
+                            <td class="subject-code">{{ student.name }}</td>
+                            <td>{{ student.email or '-' }}</td>
+                            <td style="color: {% if student.face_encoding %}green{% else %}red{% endif %};">
+                                {% if student.face_encoding %}
+                                <i class="bi bi-check-circle"></i> Yes
+                                {% else %}
+                                <i class="bi bi-x-circle"></i> No
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="slcm-btn slcm-btn-primary" style="padding: 3px 8px; font-size: 11px;" onclick="editStudent({{ student.id }})">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="slcm-btn" style="padding: 3px 8px; font-size: 11px; background: #336699; color: white;" onclick="addPhoto({{ student.id }}, '{{ student.name }}')">
+                                    <i class="bi bi-camera"></i>
+                                </button>
+                                <form action="{{ url_for('teacher.delete_student', id=student.id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Delete this student?');">
+                                    <button type="submit" class="slcm-btn" style="padding: 3px 8px; font-size: 11px; background: #8B0000; color: white;">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 30px; color: #999;">
+                            No students found. Click "Add Student" to get started.
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<!-- Add Student Modal -->
+<div class="modal fade" id="addStudentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-person-plus me-2"></i>Add New Student</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('teacher.add_student') }}" method="POST" enctype="multipart/form-data">
+                {{ form.hidden_tag() }}
+                <div class="modal-body">
+                    <div class="slcm-form-group">
+                        <label class="slcm-form-label">Registration Number *</label>
+                        {{ form.reg_no(class="slcm-form-control", placeholder="e.g., 210905001") }}
+                    </div>
+                    <div class="slcm-form-group">
+                        <label class="slcm-form-label">Full Name *</label>
+                        {{ form.name(class="slcm-form-control", placeholder="e.g., John Doe") }}
+                    </div>
+                    <div class="slcm-form-group">
+                        <label class="slcm-form-label">Email</label>
+                        {{ form.email(class="slcm-form-control", placeholder="e.g., john@example.com") }}
+                    </div>
+                    <div class="slcm-form-group">
+                        <label class="slcm-form-label">Photos (for face recognition)</label>
+                        <input type="file" name="photos" class="slcm-form-control" multiple accept="image/*">
+                        <small style="color: #666; font-size: 11px;">Upload clear face photos.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="slcm-btn" style="background: #666; color: white;" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="slcm-btn slcm-btn-primary">Add Student</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Student Modal -->
+<div class="modal fade" id="editStudentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Edit Student</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editStudentForm" method="POST" enctype="multipart/form-data">
+                {{ form.hidden_tag() }}
+                <div class="modal-body">
+                    <div class="slcm-form-group">
+                        <label class="slcm-form-label">Registration Number *</label>
+                        <input type="text" name="reg_no" id="edit_reg_no" class="slcm-form-control" required>
+                    </div>
+                    <div class="slcm-form-group">
+                        <label class="slcm-form-label">Full Name *</label>
+                        <input type="text" name="name" id="edit_name" class="slcm-form-control" required>
+                    </div>
+                    <div class="slcm-form-group">
+                        <label class="slcm-form-label">Email</label>
+                        <input type="email" name="email" id="edit_email" class="slcm-form-control">
+                    </div>
+                    <div class="slcm-form-group">
+                        <label class="slcm-form-label">Add More Photos</label>
+                        <input type="file" name="photos" class="slcm-form-control" multiple accept="image/*">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="slcm-btn" style="background: #666; color: white;" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="slcm-btn slcm-btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Photo Modal -->
+<div class="modal fade" id="addPhotoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-camera me-2"></i>Add Photos - <span id="photoStudentName"></span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addPhotoForm" method="POST" enctype="multipart/form-data">
+                {{ add_photo_form.hidden_tag() }}
+                <div class="modal-body">
+                    <div class="slcm-form-group">
+                        <label class="slcm-form-label">Select Photos</label>
+                        <input type="file" name="photos" class="slcm-form-control" multiple accept="image/*" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="slcm-btn" style="background: #666; color: white;" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="slcm-btn slcm-btn-primary">Upload</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    function editStudent(id) {
+        fetch(`/teacher/students/${id}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('edit_reg_no').value = data.reg_no;
+                document.getElementById('edit_name').value = data.name;
+                document.getElementById('edit_email').value = data.email;
+                document.getElementById('editStudentForm').action = `/teacher/students/${id}/edit`;
+                new bootstrap.Modal(document.getElementById('editStudentModal')).show();
+            });
+    }
+
+    function addPhoto(id, name) {
+        document.getElementById('photoStudentName').textContent = name;
+        document.getElementById('addPhotoForm').action = `/teacher/students/${id}/add-photo`;
+        new bootstrap.Modal(document.getElementById('addPhotoModal')).show();
+    }
+</script>
+{% endblock %}
+{% endblock %}

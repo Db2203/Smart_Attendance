@@ -1,0 +1,214 @@
+{% extends "slcm_base.html" %}
+
+{% block title %}SLCM - Mark Attendance{% endblock %}
+
+{% block main_content %}
+<!-- Sidebar -->
+<aside class="slcm-sidebar">
+    <div class="slcm-sidebar-header">Faculty Portal</div>
+    <ul class="slcm-sidebar-menu">
+        <li class="slcm-sidebar-item">
+            <a href="{{ url_for('teacher.dashboard') }}" class="slcm-sidebar-link">Dashboard</a>
+        </li>
+        <li class="slcm-sidebar-item">
+            <a href="{{ url_for('teacher.attendance') }}" class="slcm-sidebar-link active">Mark Attendance</a>
+        </li>
+        <li class="slcm-sidebar-item">
+            <a href="{{ url_for('teacher.students') }}" class="slcm-sidebar-link">Student Management</a>
+        </li>
+        <li class="slcm-sidebar-item">
+            <a href="#" class="slcm-sidebar-link">Class Records</a>
+        </li>
+        <li class="slcm-sidebar-item">
+            <a href="#" class="slcm-sidebar-link">Reports</a>
+        </li>
+        <li class="slcm-sidebar-item">
+            <a href="#" class="slcm-sidebar-link">Settings</a>
+        </li>
+    </ul>
+</aside>
+
+<!-- Content -->
+<main class="slcm-content">
+    <div class="slcm-content-header">Mark Attendance - Face Recognition</div>
+    <div class="slcm-content-body">
+        <form method="POST" enctype="multipart/form-data" id="attendanceForm">
+            {{ form.hidden_tag() }}
+
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <div class="slcm-form-group">
+                        <label class="slcm-form-label">Select Class</label>
+                        {{ form.class_id(class="slcm-form-select") }}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="slcm-form-group">
+                        <label class="slcm-form-label">Date</label>
+                        <input type="text" class="slcm-form-control" value="{{ today.strftime('%d-%m-%Y') if today else '' }}" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <div class="slcm-form-group">
+                <label class="slcm-form-label">Upload Class Photo</label>
+                <div class="slcm-upload-area" onclick="document.getElementById('imageInput').click()">
+                    <i class="bi bi-cloud-arrow-up"></i>
+                    <p id="uploadText">Click to upload or drag and drop</p>
+                    <p style="font-size: 11px; color: #999;">Supported: JPG, PNG, GIF</p>
+                    {{ form.image(id="imageInput", style="display: none", accept="image/*") }}
+                </div>
+                <div id="imagePreview" style="display: none; margin-top: 15px; text-align: center;">
+                    <img id="previewImg" src="" alt="Preview" style="max-width: 100%; max-height: 250px; border: 1px solid #ddd;">
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 20px;">
+                <button type="submit" class="slcm-btn slcm-btn-primary" style="padding: 10px 30px;">
+                    <i class="bi bi-search"></i> Process Image
+                </button>
+            </div>
+        </form>
+
+        {% if results %}
+        <!-- Recognition Results -->
+        <div class="slcm-section-title" style="margin-top: 30px;">
+            Recognition Results ({{ results.total_faces }} faces detected)
+        </div>
+
+        {% if results.image_url %}
+        <div style="text-align: center; margin-bottom: 20px;">
+            <img src="{{ results.image_url }}" alt="Processed" style="max-width: 100%; max-height: 250px; border: 1px solid #ddd;">
+        </div>
+        {% endif %}
+
+        <!-- Summary -->
+        <div class="slcm-dashboard-grid" style="margin-bottom: 20px;">
+            <div class="slcm-stat-card">
+                <div class="slcm-stat-icon green">
+                    <i class="bi bi-check-circle"></i>
+                </div>
+                <div class="slcm-stat-content">
+                    <h3>{{ results.recognized|length }}</h3>
+                    <p>Recognized</p>
+                </div>
+            </div>
+            <div class="slcm-stat-card">
+                <div class="slcm-stat-icon orange">
+                    <i class="bi bi-question-circle"></i>
+                </div>
+                <div class="slcm-stat-content">
+                    <h3>{{ results.close_matches|length }}</h3>
+                    <p>Need Confirmation</p>
+                </div>
+            </div>
+            <div class="slcm-stat-card">
+                <div class="slcm-stat-icon" style="background-color: #8B0000; color: white;">
+                    <i class="bi bi-person-x"></i>
+                </div>
+                <div class="slcm-stat-content">
+                    <h3>{{ results.unknown_count }}</h3>
+                    <p>Unknown</p>
+                </div>
+            </div>
+        </div>
+
+        {% if results.recognized %}
+        <div class="slcm-section-title">Confirmed Students</div>
+        <div class="slcm-results-grid">
+            {% for student in results.recognized %}
+            <div class="slcm-result-card confirmed">
+                <div class="slcm-result-avatar">
+                    <i class="bi bi-person-fill"></i>
+                </div>
+                <div class="slcm-result-info">
+                    <h4>{{ student.name }}</h4>
+                    <p>{{ student.reg_no }}</p>
+                </div>
+                <span class="slcm-result-badge confirmed">{{ student.confidence|round(1) }}%</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if results.close_matches %}
+        <div class="slcm-section-title">Need Confirmation</div>
+        <div class="slcm-results-grid">
+            {% for student in results.close_matches %}
+            <div class="slcm-result-card pending">
+                <div class="slcm-result-avatar">
+                    <i class="bi bi-person-fill"></i>
+                </div>
+                <div class="slcm-result-info">
+                    <h4>{{ student.name }}</h4>
+                    <p>{{ student.reg_no }}</p>
+                </div>
+                <span class="slcm-result-badge pending">{{ student.confidence|round(1) }}%</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div style="text-align: center; margin-top: 25px;">
+            <button type="button" class="slcm-btn slcm-btn-primary" style="padding: 10px 30px;" onclick="saveAttendance()">
+                <i class="bi bi-save"></i> Save Attendance
+            </button>
+        </div>
+
+        <input type="hidden" id="classId" value="{{ results.class_id }}">
+        <input type="hidden" id="recognizedStudents" value='{{ results.recognized | tojson }}'>
+        <input type="hidden" id="closeMatchStudents" value='{{ results.close_matches | tojson }}'>
+        {% endif %}
+    </div>
+</main>
+
+{% block extra_js %}
+<script>
+    document.getElementById('imageInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('previewImg').src = e.target.result;
+                document.getElementById('imagePreview').style.display = 'block';
+                document.getElementById('uploadText').textContent = file.name;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    function saveAttendance() {
+        const classId = document.getElementById('classId').value;
+        const recognized = JSON.parse(document.getElementById('recognizedStudents').value || '[]');
+        const closeMatches = JSON.parse(document.getElementById('closeMatchStudents').value || '[]');
+        const allStudents = [...recognized, ...closeMatches];
+
+        if (allStudents.length === 0) {
+            alert('No students to save.');
+            return;
+        }
+
+        fetch('{{ url_for("teacher.confirm_attendance") }}', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                class_id: classId,
+                student_ids: allStudents.map(s => ({id: s.id, confidence: s.confidence}))
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                window.location.href = '{{ url_for("teacher.dashboard") }}';
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error saving attendance.');
+        });
+    }
+</script>
+{% endblock %}
+{% endblock %}

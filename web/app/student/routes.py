@@ -45,14 +45,15 @@ def dashboard():
         .order_by(Attendance.date.desc(), Attendance.created_at.desc())\
         .limit(10).all()
 
-    return render_template('student/dashboard.html',
+    return render_template('student/slcm_dashboard.html',
                            student=student,
                            attendance_rate=attendance_rate,
                            present_count=present_count,
                            absent_count=absent_count,
                            classes_count=classes_count,
                            recent_attendance=recent_attendance,
-                           enrolled_classes=enrolled_classes)
+                           enrolled_classes=enrolled_classes,
+                           active_tab='academics')
 
 
 @student_bp.route('/history')

@@ -1,0 +1,116 @@
+{% extends "slcm_base.html" %}
+
+{% block title %}SLCM - Attendance{% endblock %}
+
+{% block main_content %}
+<!-- Sidebar -->
+<aside class="slcm-sidebar">
+    <div class="slcm-sidebar-header">Academics</div>
+    <ul class="slcm-sidebar-menu">
+        <li class="slcm-sidebar-item">
+            <a href="#" class="slcm-sidebar-link">Registration Details</a>
+        </li>
+        <li class="slcm-sidebar-item">
+            <a href="#" class="slcm-sidebar-link">Course Details</a>
+        </li>
+        <li class="slcm-sidebar-item">
+            <a href="#" class="slcm-sidebar-link">Time Table</a>
+        </li>
+        <li class="slcm-sidebar-item">
+            <a href="{{ url_for('student.dashboard') }}" class="slcm-sidebar-link active">Attendance</a>
+        </li>
+        <li class="slcm-sidebar-item">
+            <a href="#" class="slcm-sidebar-link">Daily Attendance</a>
+        </li>
+        <li class="slcm-sidebar-item">
+            <a href="#" class="slcm-sidebar-link">Internal Marks</a>
+        </li>
+        <li class="slcm-sidebar-item">
+            <a href="#" class="slcm-sidebar-link">Grade Sheet</a>
+        </li>
+        <li class="slcm-sidebar-item">
+            <a href="#" class="slcm-sidebar-link">Hall Ticket</a>
+        </li>
+        <li class="slcm-sidebar-item">
+            <a href="#" class="slcm-sidebar-link">Achievements</a>
+        </li>
+        <li class="slcm-sidebar-item">
+            <a href="#" class="slcm-sidebar-link">Incidents</a>
+        </li>
+    </ul>
+</aside>
+
+<!-- Content -->
+<main class="slcm-content">
+    <div class="slcm-content-header">Attendance(%)</div>
+    <div class="slcm-content-body">
+        <!-- Student Info Bar -->
+        <div class="slcm-info-bar">
+            <div class="slcm-info-item">
+                <span class="slcm-info-label">Registration No.</span>
+                <span class="slcm-info-value">{{ student.reg_no }}</span>
+            </div>
+            <div class="slcm-info-item">
+                <span class="slcm-info-label">Name</span>
+                <span class="slcm-info-value">{{ student.name }}</span>
+            </div>
+            <div class="slcm-info-item">
+                <span class="slcm-info-label">Semester</span>
+                <span class="slcm-info-value">VII</span>
+            </div>
+        </div>
+
+        <!-- Attendance Table -->
+        <div class="slcm-table-container">
+            <table class="slcm-table">
+                <thead>
+                    <tr>
+                        <th>Academic Year</th>
+                        <th>Subject Code</th>
+                        <th>Subject</th>
+                        <th>Semester</th>
+                        <th>Total Class</th>
+                        <th>Days Present</th>
+                        <th>Days Absent</th>
+                        <th>Attendance(%)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if enrolled_classes %}
+                        {% for cls in enrolled_classes %}
+                        {% set total = 0 %}
+                        {% set present = 0 %}
+                        {% for record in recent_attendance if record.class_id == cls.id %}
+                            {% set total = total + 1 %}
+                            {% if record.status == 'present' %}
+                                {% set present = present + 1 %}
+                            {% endif %}
+                        {% endfor %}
+                        {% set absent = total - present %}
+                        {% set percentage = (present / total * 100)|round(2) if total > 0 else 0 %}
+                        <tr>
+                            <td>2025-2026</td>
+                            <td class="subject-code">{{ cls.code }}</td>
+                            <td>{{ cls.name }}</td>
+                            <td>VII</td>
+                            <td>{{ total }}</td>
+                            <td>{{ present }}</td>
+                            <td>{{ absent }}</td>
+                            <td class="{% if percentage >= 75 %}attendance-good{% elif percentage >= 65 %}attendance-warning{% else %}attendance-danger{% endif %}">
+                                {{ "%.2f"|format(percentage) }}%
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 30px; color: #999;">
+                            No attendance records found.
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+{% endblock %}
