@@ -112,12 +112,35 @@ Smart_Attendance/
 - Flask-WTF for forms
 - Bootstrap 5 + custom CSS
 
-### UI Theme
-- Login page: Manipal-style with full-screen campus background, logo, and semi-transparent card
-- Dashboard: Sidebar navigation with role-based menus
-- Custom images required:
-  - `web/app/static/images/campus-bg.jpg` - Login background
-  - `web/app/static/images/logo.png` - Logo (top-left of login)
+### UI Theme - SLCM Clone
+The web app UI is styled to match the SLCM (Student Life Cycle Management) portal used by Manipal University.
+
+**Layout Structure:**
+- Red announcement bar at top with user name
+- Header with logo, green navigation tabs, and profile dropdown
+- Orange "My Home Page" breadcrumb
+- Two-column layout: sidebar menu + main content area
+- Campus background image visible below content
+
+**Key CSS Classes (in `slcm.css`):**
+- `.slcm-announcement-bar` - Red top bar (#8B0000)
+- `.slcm-header` - White header with logo and nav
+- `.slcm-nav-tab` - Green navigation tabs (#4a5a3c)
+- `.slcm-breadcrumb` - Orange breadcrumb links (#cc6600)
+- `.slcm-sidebar` - Left sidebar with menu items
+- `.slcm-content` - Main content area
+- `.slcm-table` - Styled data tables
+
+**Templates:**
+- `slcm_base.html` - Base template with header, nav, breadcrumb
+- `student/slcm_dashboard.html` - Student attendance view
+- `teacher/slcm_dashboard.html` - Teacher dashboard
+- `teacher/slcm_attendance.html` - Mark attendance page
+- `teacher/slcm_students.html` - Student management page
+
+**Required Images:**
+- `web/app/static/images/campus-bg.jpg` - Campus background (visible below content)
+- `web/app/static/images/logo.png` - Logo in header
 
 ### Key Routes
 - `/auth/login`, `/auth/register` - Authentication

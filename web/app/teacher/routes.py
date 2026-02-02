@@ -44,11 +44,12 @@ def dashboard():
     total_students = Student.query.count()
     total_classes = len(classes)
 
-    return render_template('teacher/dashboard.html',
+    return render_template('teacher/slcm_dashboard.html',
                            classes=classes,
                            total_students=total_students,
                            total_classes=total_classes,
-                           recent_attendance=recent_attendance[:10])
+                           recent_attendance=recent_attendance[:10],
+                           active_tab='dashboard')
 
 
 @teacher_bp.route('/attendance', methods=['GET', 'POST'])
@@ -138,7 +139,8 @@ def attendance():
             if recognition_results['unknown_count'] > 0:
                 flash(f'{recognition_results["unknown_count"]} face(s) could not be identified.', 'warning')
 
-    return render_template('teacher/attendance.html', form=form, results=results)
+    from datetime import date as date_module
+    return render_template('teacher/slcm_attendance.html', form=form, results=results, today=date_module.today(), active_tab='attendance')
 
 
 @teacher_bp.route('/attendance/confirm', methods=['POST'])
@@ -203,7 +205,7 @@ def students():
     all_students = Student.query.order_by(Student.name).all()
     form = StudentForm()
     add_photo_form = AddPhotoForm()
-    return render_template('teacher/students.html', students=all_students, form=form, add_photo_form=add_photo_form)
+    return render_template('teacher/slcm_students.html', students=all_students, form=form, add_photo_form=add_photo_form, active_tab='students')
 
 
 @teacher_bp.route('/students/add', methods=['POST'])
