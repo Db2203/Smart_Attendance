@@ -44,6 +44,24 @@
 <main class="slcm-content">
     <div class="slcm-content-header">Attendance(%)</div>
     <div class="slcm-content-body">
+        <!-- Semester Selector Row -->
+        <div class="slcm-semester-row">
+            <label>Semester</label>
+            <select class="slcm-semester-select">
+                <option value="VII" selected>VII</option>
+                <option value="VI">VI</option>
+                <option value="V">V</option>
+                <option value="IV">IV</option>
+                <option value="III">III</option>
+                <option value="II">II</option>
+                <option value="I">I</option>
+            </select>
+            <div class="slcm-action-buttons">
+                <button class="slcm-btn-show">Show</button>
+                <button class="slcm-btn-print"><i class="bi bi-printer"></i></button>
+            </div>
+        </div>
+
         <!-- Student Info Bar -->
         <div class="slcm-info-bar">
             <div class="slcm-info-item">
@@ -51,12 +69,22 @@
                 <span class="slcm-info-value">{{ student.reg_no }}</span>
             </div>
             <div class="slcm-info-item">
-                <span class="slcm-info-label">Name</span>
-                <span class="slcm-info-value">{{ student.name }}</span>
+                <span class="slcm-info-label">Student No</span>
+                <span class="slcm-info-value">{{ student.reg_no }}</span>
+            </div>
+            <div class="slcm-info-item">
+                <span class="slcm-info-label">Slcm no.</span>
+                <span class="slcm-info-value">{{ student.reg_no }}</span>
             </div>
             <div class="slcm-info-item">
                 <span class="slcm-info-label">Semester</span>
                 <span class="slcm-info-value">VII</span>
+            </div>
+        </div>
+        <div class="slcm-info-bar" style="margin-top: 0; padding-top: 0;">
+            <div class="slcm-info-item">
+                <span class="slcm-info-label">Name</span>
+                <span class="slcm-info-value">{{ student.name }}</span>
             </div>
         </div>
 
@@ -90,15 +118,13 @@
                         {% set percentage = (present / total * 100)|round(2) if total > 0 else 0 %}
                         <tr>
                             <td>2025-2026</td>
-                            <td class="subject-code">{{ cls.code }}</td>
+                            <td>{{ cls.code }}</td>
                             <td>{{ cls.name }}</td>
                             <td>VII</td>
                             <td>{{ total }}</td>
                             <td>{{ present }}</td>
                             <td>{{ absent }}</td>
-                            <td class="{% if percentage >= 75 %}attendance-good{% elif percentage >= 65 %}attendance-warning{% else %}attendance-danger{% endif %}">
-                                {{ "%.2f"|format(percentage) }}%
-                            </td>
+                            <td>{{ "%.2f"|format(percentage) }}</td>
                         </tr>
                         {% endfor %}
                     {% else %}
