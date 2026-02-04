@@ -92,33 +92,43 @@
             </div>
         </div>
 
-        <!-- My Classes -->
-        <div class="slcm-section-title" style="margin-top: 25px;">My Classes</div>
+        <!-- My Classes with Attendance Stats -->
+        <div class="slcm-section-title" style="margin-top: 25px;">My Classes - Attendance Overview</div>
         <div class="slcm-table-container">
             <table class="slcm-table">
                 <thead>
                     <tr>
                         <th>Class Code</th>
                         <th>Class Name</th>
+                        <th>Sessions</th>
+                        <th>Avg Attendance</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% if classes %}
                         {% for cls in classes %}
+                        {% set stats = class_stats.get(cls.id, {'sessions': 0, 'avg_percentage': 0}) %}
                         <tr>
                             <td>{{ cls.code }}</td>
                             <td class="subject-code">{{ cls.name }}</td>
+                            <td>{{ stats.sessions }}</td>
+                            <td style="color: {% if stats.avg_percentage >= 75 %}green{% elif stats.avg_percentage >= 50 %}orange{% else %}red{% endif %};">
+                                {{ stats.avg_percentage }}%
+                            </td>
                             <td>
+                                <a href="{{ url_for('teacher.class_records', class_id=cls.id) }}" class="slcm-btn" style="padding: 5px 12px; background-color: #336699; color: white; margin-right: 5px;">
+                                    View Records
+                                </a>
                                 <a href="{{ url_for('teacher.attendance') }}" class="slcm-btn slcm-btn-primary" style="padding: 5px 12px;">
-                                    Mark Attendance
+                                    Mark
                                 </a>
                             </td>
                         </tr>
                         {% endfor %}
                     {% else %}
                     <tr>
-                        <td colspan="3" style="text-align: center; padding: 20px; color: #999;">
+                        <td colspan="5" style="text-align: center; padding: 20px; color: #999;">
                             No classes assigned.
                         </td>
                     </tr>

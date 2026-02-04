@@ -339,7 +339,7 @@ class SmartAttendanceApp:
             try:
                 image = fr.load_image_file(image_path)
                 image = preprocess_image(image)
-                encodings = fr.face_encodings(image, model=FACE_RECOGNITION["model"])
+                encodings = fr.face_encodings(image, model=FACE_RECOGNITION["model"], num_jitters=5)
                 if not encodings:
                     messagebox.showerror("Error", "No face detected in the image.")
                     return
