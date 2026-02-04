@@ -106,25 +106,16 @@
                 <tbody>
                     {% if enrolled_classes %}
                         {% for cls in enrolled_classes %}
-                        {% set total = 0 %}
-                        {% set present = 0 %}
-                        {% for record in recent_attendance if record.class_id == cls.id %}
-                            {% set total = total + 1 %}
-                            {% if record.status == 'present' %}
-                                {% set present = present + 1 %}
-                            {% endif %}
-                        {% endfor %}
-                        {% set absent = total - present %}
-                        {% set percentage = (present / total * 100)|round(2) if total > 0 else 0 %}
+                        {% set stats = attendance_by_class.get(cls.id, {'total': 0, 'present': 0, 'absent': 0, 'percentage': 0}) %}
                         <tr>
                             <td>2025-2026</td>
                             <td>{{ cls.code }}</td>
                             <td>{{ cls.name }}</td>
                             <td>VII</td>
-                            <td>{{ total }}</td>
-                            <td>{{ present }}</td>
-                            <td>{{ absent }}</td>
-                            <td>{{ "%.2f"|format(percentage) }}</td>
+                            <td>{{ stats.total }}</td>
+                            <td>{{ stats.present }}</td>
+                            <td>{{ stats.absent }}</td>
+                            <td>{{ "%.2f"|format(stats.percentage) }}</td>
                         </tr>
                         {% endfor %}
                     {% else %}

@@ -4,11 +4,16 @@ IMAGE_ENHANCEMENT = {
     'sharpness': 1.1,
 }
 
+# InsightFace uses cosine similarity (higher = better match)
+# Threshold 0.35 means faces with similarity > 0.35 are considered matches
+# This is different from old dlib Euclidean distance (lower = better)
 FACE_RECOGNITION = {
-    'model': 'cnn',
-    'threshold': 0.52,          # Slightly relaxed to catch more matches
-    'resize_scale': 0.25,
-    'confirmation_margin': 0.12  # Wider margin for close matches needing confirmation
+    'model': 'insightface',  # Using InsightFace with GPU
+    'threshold': 0.35,       # Cosine similarity threshold (0-1 scale, higher = stricter)
+    'resize_scale': 0.25,    # For display purposes
+    'confirmation_margin': 0.08,  # Faces between threshold-margin and threshold need confirmation
+    'det_size': (640, 640),  # Detection input size
+    'det_threshold': 0.5,    # Face detection confidence threshold
 }
 
 # All paths relative to project root
@@ -18,6 +23,7 @@ PATHS = {
     'database': 'data/attendance.db',
     'images_dir': 'images',
     'assets_dir': 'assets',
+    'models_dir': '~/.insightface/models/buffalo_l',  # InsightFace models directory
 }
 
 # Legacy alias for backward compatibility

@@ -1,0 +1,149 @@
+{% extends "slcm_base.html" %}
+
+{% block title %}SLCM - {{ cls.name }} Records{% endblock %}
+
+{% block main_content %}
+<!-- Sidebar -->
+<aside class="slcm-sidebar">
+    <div class="slcm-sidebar-header">Faculty Portal</div>
+    <ul class="slcm-sidebar-menu">
+        <li class="slcm-sidebar-item">
+            <a href="{{ url_for('teacher.dashboard') }}" class="slcm-sidebar-link">Dashboard</a>
+        </li>
+        <li class="slcm-sidebar-item">
+            <a href="{{ url_for('teacher.attendance') }}" class="slcm-sidebar-link">Mark Attendance</a>
+        </li>
+        <li class="slcm-sidebar-item">
+            <a href="{{ url_for('teacher.students') }}" class="slcm-sidebar-link">Student Management</a>
+        </li>
+        <li class="slcm-sidebar-item">
+            <a href="#" class="slcm-sidebar-link active">Class Records</a>
+        </li>
+        <li class="slcm-sidebar-item">
+            <a href="#" class="slcm-sidebar-link">Reports</a>
+        </li>
+        <li class="slcm-sidebar-item">
+            <a href="#" class="slcm-sidebar-link">Settings</a>
+        </li>
+    </ul>
+</aside>
+
+<!-- Content -->
+<main class="slcm-content">
+    <div class="slcm-content-header">Attendance Records - {{ cls.name }} ({{ cls.code }})</div>
+    <div class="slcm-content-body">
+        <!-- Back button -->
+        <div style="margin-bottom: 15px;">
+            <a href="{{ url_for('teacher.dashboard') }}" class="slcm-btn" style="background-color: #666; color: white;">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+
+        <!-- Summary Stats -->
+        <div class="slcm-dashboard-grid">
+            <div class="slcm-stat-card">
+                <div class="slcm-stat-icon blue">
+                    <i class="bi bi-calendar-check"></i>
+                </div>
+                <div class="slcm-stat-content">
+                    <h3>{{ total_sessions }}</h3>
+                    <p>Total Sessions</p>
+                </div>
+            </div>
+            <div class="slcm-stat-card">
+                <div class="slcm-stat-icon green">
+                    <i class="bi bi-person-check"></i>
+                </div>
+                <div class="slcm-stat-content">
+                    <h3>{{ total_present }}</h3>
+                    <p>Total Present</p>
+                </div>
+            </div>
+            <div class="slcm-stat-card">
+                <div class="slcm-stat-icon orange">
+                    <i class="bi bi-percent"></i>
+                </div>
+                <div class="slcm-stat-content">
+                    <h3>{{ avg_attendance }}%</h3>
+                    <p>Avg Attendance</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sessions List -->
+        <div class="slcm-section-title" style="margin-top: 25px;">Attendance by Session</div>
+
+        {% if sessions %}
+            {% for session in sessions %}
+            <div class="session-card" style="background: white; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 15px; overflow: hidden;">
+                <!-- Session Header -->
+                <div class="session-header" style="background: #f5f5f5; padding: 12px 15px; border-bottom: 1px solid #ddd; cursor: pointer;" onclick="toggleSession('session-{{ loop.index }}')">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong style="font-size: 14px;">{{ session.date.strftime('%A, %d %B %Y') }}</strong>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <span style="color: green;"><i class="bi bi-check-circle"></i> {{ session.present_count }} Present</span>
+                            <span style="background: {% if session.percentage >= 75 %}#28a745{% elif session.percentage >= 50 %}#ffc107{% else %}#dc3545{% endif %}; color: white; padding: 3px 10px; border-radius: 12px; font-size: 12px;">
+                                {{ session.percentage }}%
+                            </span>
+                            <i class="bi bi-chevron-down" id="icon-session-{{ loop.index }}"></i>
+                        </div>
+                    </div>
+                </div>
+                <!-- Session Details (hidden by default) -->
+                <div class="session-details" id="session-{{ loop.index }}" style="display: none; padding: 15px;">
+                    <table class="slcm-table" style="margin: 0;">
+                        <thead>
+                            <tr>
+                                <th>Reg No</th>
+                                <th>Student Name</th>
+                                <th>Status</th>
+                                <th>Confidence</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in session.records %}
+                            <tr>
+                                <td>{{ record.student.reg_no if record.student else 'N/A' }}</td>
+                                <td>{{ record.student.name if record.student else 'N/A' }}</td>
+                                <td style="color: {% if record.status == 'present' %}green{% else %}red{% endif %};">
+                                    <i class="bi bi-{% if record.status == 'present' %}check-circle-fill{% else %}x-circle-fill{% endif %}"></i>
+                                    {{ record.status|capitalize }}
+                                </td>
+                                <td>{{ "%.1f"|format(record.confidence) if record.confidence else '-' }}%</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div style="text-align: center; padding: 40px; color: #999; background: white; border: 1px solid #ddd; border-radius: 4px;">
+                <i class="bi bi-inbox" style="font-size: 48px; display: block; margin-bottom: 10px;"></i>
+                No attendance records found for this class.
+            </div>
+        {% endif %}
+    </div>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function toggleSession(sessionId) {
+        const details = document.getElementById(sessionId);
+        const icon = document.getElementById('icon-' + sessionId);
+
+        if (details.style.display === 'none') {
+            details.style.display = 'block';
+            icon.classList.remove('bi-chevron-down');
+            icon.classList.add('bi-chevron-up');
+        } else {
+            details.style.display = 'none';
+            icon.classList.remove('bi-chevron-up');
+            icon.classList.add('bi-chevron-down');
+        }
+    }
+</script>
+{% endblock %}

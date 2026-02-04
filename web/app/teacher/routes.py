@@ -29,6 +29,8 @@ def teacher_required(f):
 @login_required
 @teacher_required
 def dashboard():
+    from sqlalchemy import func
+
     # Get teacher's classes
     classes = Class.query.filter_by(teacher_id=current_user.id).all()
 
@@ -44,8 +46,30 @@ def dashboard():
     total_students = Student.query.count()
     total_classes = len(classes)
 
+    # Per-class attendance stats
+    class_stats = {}
+    for cls in classes:
+        # Count unique dates (sessions) for this class
+        sessions = db.session.query(func.count(func.distinct(Attendance.date)))\
+            .filter(Attendance.class_id == cls.id).scalar() or 0
+
+        # Count total attendance records and present records
+        total_records = Attendance.query.filter_by(class_id=cls.id).count()
+        present_records = Attendance.query.filter_by(class_id=cls.id, status='present').count()
+
+        # Calculate average attendance percentage
+        avg_percentage = round((present_records / total_records * 100), 1) if total_records > 0 else 0
+
+        class_stats[cls.id] = {
+            'sessions': sessions,
+            'total_records': total_records,
+            'present_records': present_records,
+            'avg_percentage': avg_percentage
+        }
+
     return render_template('teacher/slcm_dashboard.html',
                            classes=classes,
+                           class_stats=class_stats,
                            total_students=total_students,
                            total_classes=total_classes,
                            recent_attendance=recent_attendance[:10],
@@ -97,31 +121,40 @@ def attendance():
         if recognition_results['error']:
             flash(recognition_results['error'], 'warning')
         else:
-            # Get student details for recognized faces
-            recognized_students = []
+            # Get student details for recognized faces (deduplicated by reg_no, keeping highest confidence)
+            recognized_by_reg = {}
             for match in recognition_results['recognized']:
-                student = Student.query.filter_by(reg_no=match['reg_no']).first()
-                if student:
-                    recognized_students.append({
-                        'id': student.id,
-                        'reg_no': student.reg_no,
-                        'name': student.name,
-                        'confidence': match['confidence'],
-                        'status': 'confirmed'
-                    })
+                reg_no = match['reg_no']
+                if reg_no not in recognized_by_reg or match['confidence'] > recognized_by_reg[reg_no]['confidence']:
+                    student = Student.query.filter_by(reg_no=reg_no).first()
+                    if student:
+                        recognized_by_reg[reg_no] = {
+                            'id': student.id,
+                            'reg_no': student.reg_no,
+                            'name': student.name,
+                            'confidence': match['confidence'],
+                            'status': 'confirmed'
+                        }
+            recognized_students = list(recognized_by_reg.values())
 
-            # Get student details for close matches
-            close_match_students = []
+            # Get student details for close matches (deduplicated, excluding already recognized)
+            close_match_by_reg = {}
             for match in recognition_results['close_matches']:
-                student = Student.query.filter_by(reg_no=match['reg_no']).first()
-                if student:
-                    close_match_students.append({
-                        'id': student.id,
-                        'reg_no': student.reg_no,
-                        'name': student.name,
-                        'confidence': match['confidence'],
-                        'status': 'pending'
-                    })
+                reg_no = match['reg_no']
+                # Skip if already in recognized list
+                if reg_no in recognized_by_reg:
+                    continue
+                if reg_no not in close_match_by_reg or match['confidence'] > close_match_by_reg[reg_no]['confidence']:
+                    student = Student.query.filter_by(reg_no=reg_no).first()
+                    if student:
+                        close_match_by_reg[reg_no] = {
+                            'id': student.id,
+                            'reg_no': student.reg_no,
+                            'name': student.name,
+                            'confidence': match['confidence'],
+                            'status': 'pending'
+                        }
+            close_match_students = list(close_match_by_reg.values())
 
             results = {
                 'recognized': recognized_students,
@@ -439,3 +472,57 @@ def reports():
     """View attendance reports."""
     classes = Class.query.filter_by(teacher_id=current_user.id).all()
     return render_template('teacher/reports.html', classes=classes)
+
+
+@teacher_bp.route('/class/<int:class_id>/records')
+@login_required
+@teacher_required
+def class_records(class_id):
+    """View attendance records for a specific class."""
+    from sqlalchemy import func
+    from collections import defaultdict
+
+    # Get the class
+    cls = Class.query.get_or_404(class_id)
+
+    # Verify the teacher owns this class (or show all classes for now)
+    # if cls.teacher_id != current_user.id:
+    #     flash('Access denied.', 'danger')
+    #     return redirect(url_for('teacher.dashboard'))
+
+    # Get all attendance records for this class
+    attendance_records = Attendance.query.filter_by(class_id=class_id)\
+        .order_by(Attendance.date.desc(), Attendance.student_id).all()
+
+    # Group attendance by date (each date = one session)
+    sessions = defaultdict(list)
+    for record in attendance_records:
+        sessions[record.date].append(record)
+
+    # Convert to list of session data with stats
+    session_list = []
+    for session_date, records in sorted(sessions.items(), reverse=True):
+        present_count = sum(1 for r in records if r.status == 'present')
+        total_count = len(records)
+        session_list.append({
+            'date': session_date,
+            'records': records,
+            'present_count': present_count,
+            'total_count': total_count,
+            'percentage': round((present_count / total_count * 100), 1) if total_count > 0 else 0
+        })
+
+    # Overall stats
+    total_sessions = len(session_list)
+    total_records = len(attendance_records)
+    total_present = sum(1 for r in attendance_records if r.status == 'present')
+    avg_attendance = round((total_present / total_records * 100), 1) if total_records > 0 else 0
+
+    return render_template('teacher/slcm_class_records.html',
+                           cls=cls,
+                           sessions=session_list,
+                           total_sessions=total_sessions,
+                           total_records=total_records,
+                           total_present=total_present,
+                           avg_attendance=avg_attendance,
+                           active_tab='records')

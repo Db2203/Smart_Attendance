@@ -40,10 +40,25 @@ def dashboard():
     # Calculate attendance percentage
     attendance_rate = round((present_count / total_records * 100), 1) if total_records > 0 else 0
 
-    # Get recent attendance records (last 10)
-    recent_attendance = Attendance.query.filter_by(student_id=student.id)\
-        .order_by(Attendance.date.desc(), Attendance.created_at.desc())\
-        .limit(10).all()
+    # Get attendance per class (not global limit - fixes display issue)
+    attendance_by_class = {}
+    for cls in enrolled_classes:
+        records = Attendance.query.filter_by(
+            student_id=student.id,
+            class_id=cls.id
+        ).order_by(Attendance.date.desc()).all()
+
+        cls_present = sum(1 for r in records if r.status == 'present')
+        cls_total = len(records)
+        cls_percentage = round((cls_present / cls_total * 100), 2) if cls_total > 0 else 0
+
+        attendance_by_class[cls.id] = {
+            'records': records,
+            'total': cls_total,
+            'present': cls_present,
+            'absent': cls_total - cls_present,
+            'percentage': cls_percentage
+        }
 
     return render_template('student/slcm_dashboard.html',
                            student=student,
@@ -51,7 +66,7 @@ def dashboard():
                            present_count=present_count,
                            absent_count=absent_count,
                            classes_count=classes_count,
-                           recent_attendance=recent_attendance,
+                           attendance_by_class=attendance_by_class,
                            enrolled_classes=enrolled_classes,
                            active_tab='academics')
 
