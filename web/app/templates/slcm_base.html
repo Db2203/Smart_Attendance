@@ -47,7 +47,7 @@
         <!-- Profile Dropdown -->
         <div class="slcm-profile-section" style="position: relative;">
             <button class="slcm-profile-btn" onclick="toggleDropdown()">
-                ProfilePic <i class="bi bi-caret-down-fill" style="font-size: 10px;"></i>
+                {{ current_user.name }} <i class="bi bi-caret-down-fill" style="font-size: 10px;"></i>
             </button>
             <div class="slcm-dropdown-menu" id="profileDropdown">
                 <a href="#" class="slcm-dropdown-item">My Profile</a>
