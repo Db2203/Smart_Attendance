@@ -2,12 +2,20 @@ import os
 import pickle
 import numpy as np
 import pandas as pd
+import cv2
 import face_recognition as fr
 from PIL import Image, ImageEnhance
 from config import IMAGE_ENHANCEMENT, FACE_RECOGNITION, PATHS
 
 
 def preprocess_image(image):
+    # Apply CLAHE (Contrast Limited Adaptive Histogram Equalization) for lighting normalization
+    lab = cv2.cvtColor(image, cv2.COLOR_RGB2LAB)
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    lab[:, :, 0] = clahe.apply(lab[:, :, 0])
+    image = cv2.cvtColor(lab, cv2.COLOR_LAB2RGB)
+
+    # Apply PIL enhancements
     pil_img = Image.fromarray(image)
     enhancer = ImageEnhance.Brightness(pil_img)
     pil_img = enhancer.enhance(IMAGE_ENHANCEMENT['brightness'])
@@ -113,19 +121,24 @@ def recognize_faces_in_image(image_path, student_encodings, reg_no_to_name):
         best_distance = 1.0
 
         for reg_no, known_encodings in student_encodings.items():
-            distances = []
-            for known_encoding in known_encodings:
-                if not isinstance(known_encoding, np.ndarray):
-                    known_encoding = np.array(known_encoding)
-                if known_encoding.ndim != 1:
-                    known_encoding = known_encoding.flatten()
-                d = fr.face_distance([known_encoding], unknown_encoding)[0]
-                distances.append(d)
-            if distances:
-                student_min_distance = min(distances)
-                if student_min_distance < best_distance:
-                    best_distance = student_min_distance
-                    best_match = reg_no
+            if not known_encodings:
+                continue
+            # Convert and validate encodings
+            valid_encodings = []
+            for enc in known_encodings:
+                if not isinstance(enc, np.ndarray):
+                    enc = np.array(enc)
+                if enc.ndim != 1:
+                    enc = enc.flatten()
+                valid_encodings.append(enc)
+            if not valid_encodings:
+                continue
+            # Average encodings for more robust matching
+            avg_encoding = np.mean(valid_encodings, axis=0)
+            distance = fr.face_distance([avg_encoding], unknown_encoding)[0]
+            if distance < best_distance:
+                best_distance = distance
+                best_match = reg_no
 
         if best_distance < FACE_RECOGNITION['threshold']:
             recognized_reg_nos.add(best_match)
