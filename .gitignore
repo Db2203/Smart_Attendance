@@ -1,12 +1,57 @@
-# Ignore compiled Python files
+# Compiled Python files
 __pycache__/
+*.pyc
+*.pyo
 
-# Ignore student images (keep locally, don't push)
-/images/
-/reference_images/
+# Student images (confidential - keep locally)
+Images/
+Reference_Images/
+images/
+reference_images/
 
-# Ignore data files
+# Web uploads
+web/app/static/uploads/
+
+# Database files
 data/attendance.db
 data/student_encodings.pkl
 data/absent.csv
 data/present.csv
+web/instance/
+
+# Backup files
+*.backup
+*_backup.*
+*.bak
+
+# Screenshots and temporary images
+*.png
+*.jpg
+*.jpeg
+
+# But keep assets folder images
+!assets/*.png
+!assets/*.jpg
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+nul
+
+# Downloaded packages
+*.tar.gz
+*.whl
+
+# Environment
+.env
+venv/
+env/
+
+# InsightFace models (downloaded automatically)
+.insightface/
