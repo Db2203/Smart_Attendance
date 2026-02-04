@@ -11,7 +11,7 @@ from werkzeug.utils import secure_filename
 from . import teacher_bp
 from .forms import AttendanceForm, ConfirmAttendanceForm, StudentForm, AddPhotoForm
 import pickle
-from ..models import Class, Student, Attendance, db
+from ..models import Class, Student, Attendance, ClassEnrollment, db
 from ..face_recognition import FaceRecognitionService
 
 
@@ -180,7 +180,10 @@ def attendance():
 @login_required
 @teacher_required
 def confirm_attendance():
-    """Save confirmed attendance records to database."""
+    """Save confirmed attendance records to database.
+
+    Marks recognized students as present and enrolled non-recognized students as absent.
+    """
     data = request.get_json()
 
     if not data:
@@ -190,39 +193,59 @@ def confirm_attendance():
     student_ids = data.get('student_ids', [])
     attendance_date = date.today()
 
-    if not class_id or not student_ids:
-        return jsonify({'error': 'Missing class_id or student_ids'}), 400
+    if not class_id:
+        return jsonify({'error': 'Missing class_id'}), 400
 
     try:
-        saved_count = 0
+        # Get all students enrolled in this class
+        enrollments = ClassEnrollment.query.filter_by(class_id=class_id).all()
+        enrolled_student_ids = {e.student_id for e in enrollments}
+
+        # Get the IDs of students marked as present (from face recognition)
+        present_student_ids = {item.get('id') for item in student_ids}
+
+        # Each save creates a NEW session - always create new records
+        # This allows multiple attendance sessions per day
+
+        # Mark present students
         for item in student_ids:
             student_id = item.get('id')
             confidence = item.get('confidence', 100)
 
-            # Check if attendance already exists for this student/class/date
-            existing = Attendance.query.filter_by(
+            attendance = Attendance(
                 student_id=student_id,
                 class_id=class_id,
-                date=attendance_date
-            ).first()
+                date=attendance_date,
+                status='present',
+                confidence=confidence,
+                marked_by=current_user.id
+            )
+            db.session.add(attendance)
 
-            if not existing:
-                attendance = Attendance(
-                    student_id=student_id,
-                    class_id=class_id,
-                    date=attendance_date,
-                    status='present',
-                    confidence=confidence,
-                    marked_by=current_user.id
-                )
-                db.session.add(attendance)
-                saved_count += 1
+        # Mark absent students (enrolled but not in the photo)
+        absent_student_ids = enrolled_student_ids - present_student_ids
+        for student_id in absent_student_ids:
+            attendance = Attendance(
+                student_id=student_id,
+                class_id=class_id,
+                date=attendance_date,
+                status='absent',
+                confidence=None,
+                marked_by=current_user.id
+            )
+            db.session.add(attendance)
 
         db.session.commit()
+
+        # Return actual counts for this session
+        present_count = len(present_student_ids)
+        absent_count = len(absent_student_ids)
+
         return jsonify({
             'success': True,
-            'message': f'Attendance saved for {saved_count} student(s)',
-            'saved_count': saved_count
+            'message': f'Attendance saved: {present_count} present, {absent_count} absent',
+            'present_count': present_count,
+            'absent_count': absent_count
         })
 
     except Exception as e:
@@ -526,3 +549,144 @@ def class_records(class_id):
                            total_present=total_present,
                            avg_attendance=avg_attendance,
                            active_tab='records')
+
+
+@teacher_bp.route('/attendance/<int:attendance_id>/toggle', methods=['POST'])
+@login_required
+@teacher_required
+def toggle_attendance(attendance_id):
+    """Toggle attendance status between present and absent."""
+    record = Attendance.query.get_or_404(attendance_id)
+
+    # Toggle status
+    if record.status == 'present':
+        record.status = 'absent'
+        record.confidence = None  # Clear confidence when manually changed
+    else:
+        record.status = 'present'
+        record.confidence = None
+
+    record.marked_by = current_user.id
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'new_status': record.status,
+        'message': f'Attendance updated to {record.status}'
+    })
+
+
+@teacher_bp.route('/attendance/<int:attendance_id>/delete', methods=['POST'])
+@login_required
+@teacher_required
+def delete_attendance(attendance_id):
+    """Delete an attendance record."""
+    record = Attendance.query.get_or_404(attendance_id)
+    class_id = record.class_id
+
+    db.session.delete(record)
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'message': 'Attendance record deleted'
+    })
+
+
+@teacher_bp.route('/class/<int:class_id>/export')
+@login_required
+@teacher_required
+def export_attendance(class_id):
+    """Export attendance records to CSV."""
+    import csv
+    from io import StringIO
+    from flask import Response
+
+    cls = Class.query.get_or_404(class_id)
+
+    # Get all attendance records for this class
+    records = Attendance.query.filter_by(class_id=class_id)\
+        .order_by(Attendance.date.desc(), Attendance.student_id).all()
+
+    # Create CSV in memory
+    output = StringIO()
+    writer = csv.writer(output)
+
+    # Write header
+    writer.writerow(['Date', 'Student Reg No', 'Student Name', 'Status', 'Confidence', 'Marked At'])
+
+    # Write data
+    for record in records:
+        writer.writerow([
+            record.date.strftime('%Y-%m-%d'),
+            record.student.reg_no if record.student else 'N/A',
+            record.student.name if record.student else 'N/A',
+            record.status.capitalize(),
+            f'{record.confidence:.1f}%' if record.confidence else '-',
+            record.created_at.strftime('%Y-%m-%d %H:%M') if record.created_at else '-'
+        ])
+
+    # Create response
+    output.seek(0)
+    filename = f'attendance_{cls.code}_{date.today().strftime("%Y%m%d")}.csv'
+
+    return Response(
+        output.getvalue(),
+        mimetype='text/csv',
+        headers={'Content-Disposition': f'attachment; filename={filename}'}
+    )
+
+
+@teacher_bp.route('/class/<int:class_id>/export-summary')
+@login_required
+@teacher_required
+def export_attendance_summary(class_id):
+    """Export attendance summary (per student) to CSV."""
+    import csv
+    from io import StringIO
+    from flask import Response
+    from collections import defaultdict
+
+    cls = Class.query.get_or_404(class_id)
+
+    # Get all attendance records for this class
+    records = Attendance.query.filter_by(class_id=class_id).all()
+
+    # Group by student
+    student_stats = defaultdict(lambda: {'present': 0, 'absent': 0, 'total': 0})
+    for record in records:
+        if record.student:
+            key = (record.student.reg_no, record.student.name)
+            student_stats[key]['total'] += 1
+            if record.status == 'present':
+                student_stats[key]['present'] += 1
+            else:
+                student_stats[key]['absent'] += 1
+
+    # Create CSV
+    output = StringIO()
+    writer = csv.writer(output)
+
+    # Write header
+    writer.writerow(['Reg No', 'Student Name', 'Total Classes', 'Present', 'Absent', 'Attendance %'])
+
+    # Write data sorted by reg_no
+    for (reg_no, name), stats in sorted(student_stats.items()):
+        percentage = round((stats['present'] / stats['total'] * 100), 2) if stats['total'] > 0 else 0
+        writer.writerow([
+            reg_no,
+            name,
+            stats['total'],
+            stats['present'],
+            stats['absent'],
+            f'{percentage}%'
+        ])
+
+    output.seek(0)
+    filename = f'attendance_summary_{cls.code}_{date.today().strftime("%Y%m%d")}.csv'
+
+    return Response(
+        output.getvalue(),
+        mimetype='text/csv',
+        headers={'Content-Disposition': f'attachment; filename={filename}'}
+    )

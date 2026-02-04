@@ -162,14 +162,21 @@
         {% endif %}
 
         <div style="text-align: center; margin-top: 25px;">
+            <p style="font-size: 12px; color: #666; margin-bottom: 10px;">
+                <i class="bi bi-info-circle"></i> Students in the photo will be marked <strong style="color: green;">Present</strong>.
+                Enrolled students not in the photo will be marked <strong style="color: red;">Absent</strong>.
+            </p>
             <button type="button" class="slcm-btn slcm-btn-primary" style="padding: 10px 30px;" onclick="saveAttendance()">
                 <i class="bi bi-save"></i> Save Attendance
             </button>
         </div>
 
         <input type="hidden" id="classId" value="{{ results.class_id }}">
-        <input type="hidden" id="recognizedStudents" value='{{ results.recognized | tojson }}'>
-        <input type="hidden" id="closeMatchStudents" value='{{ results.close_matches | tojson }}'>
+        <!-- Store data in script to avoid HTML escaping issues -->
+        <script>
+            window.recognizedStudents = {{ results.recognized | tojson | safe }};
+            window.closeMatchStudents = {{ results.close_matches | tojson | safe }};
+        </script>
         {% endif %}
     </div>
 </main>
@@ -218,7 +225,7 @@
 
     function saveAttendance() {
         const classId = document.getElementById('classId').value;
-        const recognized = JSON.parse(document.getElementById('recognizedStudents').value || '[]');
+        const recognized = window.recognizedStudents || [];
 
         // Only include checked close matches
         const confirmedCloseMatches = [];
@@ -234,9 +241,11 @@
             ...confirmedCloseMatches
         ];
 
+        // Confirm if no students are present (all will be marked absent)
         if (allStudents.length === 0) {
-            alert('No students to save. Please confirm at least one student or check some close matches.');
-            return;
+            if (!confirm('No students recognized. All enrolled students will be marked as ABSENT. Continue?')) {
+                return;
+            }
         }
 
         fetch('{{ url_for("teacher.confirm_attendance") }}', {

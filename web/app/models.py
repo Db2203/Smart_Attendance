@@ -103,7 +103,7 @@ class Attendance(db.Model):
     # Relationships
     marker = db.relationship('User', backref='marked_attendances')
 
-    __table_args__ = (db.UniqueConstraint('student_id', 'class_id', 'date', name='unique_attendance'),)
+    # No unique constraint - allows multiple sessions per day for the same class
 
     def __repr__(self):
         return f'<Attendance {self.student_id} - {self.date}: {self.status}>'

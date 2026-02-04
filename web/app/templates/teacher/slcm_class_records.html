@@ -32,11 +32,19 @@
 <main class="slcm-content">
     <div class="slcm-content-header">Attendance Records - {{ cls.name }} ({{ cls.code }})</div>
     <div class="slcm-content-body">
-        <!-- Back button -->
-        <div style="margin-bottom: 15px;">
+        <!-- Action buttons -->
+        <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
             <a href="{{ url_for('teacher.dashboard') }}" class="slcm-btn" style="background-color: #666; color: white;">
                 <i class="bi bi-arrow-left"></i> Back to Dashboard
             </a>
+            <div style="display: flex; gap: 10px;">
+                <a href="{{ url_for('teacher.export_attendance', class_id=cls.id) }}" class="slcm-btn" style="background-color: #28a745; color: white;">
+                    <i class="bi bi-download"></i> Export All Records
+                </a>
+                <a href="{{ url_for('teacher.export_attendance_summary', class_id=cls.id) }}" class="slcm-btn" style="background-color: #17a2b8; color: white;">
+                    <i class="bi bi-file-earmark-spreadsheet"></i> Export Summary
+                </a>
+            </div>
         </div>
 
         <!-- Summary Stats -->
@@ -84,6 +92,7 @@
                         </div>
                         <div style="display: flex; align-items: center; gap: 15px;">
                             <span style="color: green;"><i class="bi bi-check-circle"></i> {{ session.present_count }} Present</span>
+                            <span style="color: #dc3545;"><i class="bi bi-x-circle"></i> {{ session.total_count - session.present_count }} Absent</span>
                             <span style="background: {% if session.percentage >= 75 %}#28a745{% elif session.percentage >= 50 %}#ffc107{% else %}#dc3545{% endif %}; color: white; padding: 3px 10px; border-radius: 12px; font-size: 12px;">
                                 {{ session.percentage }}%
                             </span>
@@ -100,18 +109,27 @@
                                 <th>Student Name</th>
                                 <th>Status</th>
                                 <th>Confidence</th>
+                                <th style="width: 120px;">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for record in session.records %}
-                            <tr>
+                            <tr id="record-{{ record.id }}">
                                 <td>{{ record.student.reg_no if record.student else 'N/A' }}</td>
                                 <td>{{ record.student.name if record.student else 'N/A' }}</td>
-                                <td style="color: {% if record.status == 'present' %}green{% else %}red{% endif %};">
-                                    <i class="bi bi-{% if record.status == 'present' %}check-circle-fill{% else %}x-circle-fill{% endif %}"></i>
-                                    {{ record.status|capitalize }}
+                                <td id="status-{{ record.id }}" style="color: {% if record.status == 'present' %}green{% else %}red{% endif %};">
+                                    <i class="bi bi-{% if record.status == 'present' %}check-circle-fill{% else %}x-circle-fill{% endif %}" id="icon-{{ record.id }}"></i>
+                                    <span id="status-text-{{ record.id }}">{{ record.status|capitalize }}</span>
                                 </td>
                                 <td>{{ "%.1f"|format(record.confidence) if record.confidence else '-' }}%</td>
+                                <td>
+                                    <button onclick="toggleAttendance({{ record.id }})" class="slcm-btn" style="padding: 3px 8px; font-size: 11px; background-color: #ffc107; color: #000;" title="Toggle Present/Absent">
+                                        <i class="bi bi-arrow-repeat"></i>
+                                    </button>
+                                    <button onclick="deleteAttendance({{ record.id }})" class="slcm-btn" style="padding: 3px 8px; font-size: 11px; background-color: #dc3545; color: white;" title="Delete Record">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -144,6 +162,67 @@
             icon.classList.remove('bi-chevron-up');
             icon.classList.add('bi-chevron-down');
         }
+    }
+
+    function toggleAttendance(recordId) {
+        fetch(`/teacher/attendance/${recordId}/toggle`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update UI
+                const statusCell = document.getElementById(`status-${recordId}`);
+                const icon = document.getElementById(`icon-${recordId}`);
+                const statusText = document.getElementById(`status-text-${recordId}`);
+
+                if (data.new_status === 'present') {
+                    statusCell.style.color = 'green';
+                    icon.className = 'bi bi-check-circle-fill';
+                    statusText.textContent = 'Present';
+                } else {
+                    statusCell.style.color = 'red';
+                    icon.className = 'bi bi-x-circle-fill';
+                    statusText.textContent = 'Absent';
+                }
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error toggling attendance: ' + error.message);
+        });
+    }
+
+    function deleteAttendance(recordId) {
+        if (!confirm('Are you sure you want to delete this attendance record?')) {
+            return;
+        }
+
+        fetch(`/teacher/attendance/${recordId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Remove row from table
+                const row = document.getElementById(`record-${recordId}`);
+                row.remove();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error deleting attendance: ' + error.message);
+        });
     }
 </script>
 {% endblock %}
