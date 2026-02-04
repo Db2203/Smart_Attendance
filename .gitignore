@@ -55,3 +55,7 @@ env/
 
 # InsightFace models (downloaded automatically)
 .insightface/
+
+# Project documentation (local only)
+PROJECT_EXPLANATION.txt
+CLAUDE.md
