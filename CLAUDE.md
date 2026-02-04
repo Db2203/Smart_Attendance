@@ -20,9 +20,14 @@ Run from the project root directory.
 
 ## Dependencies
 
-### Core
+### Core (InsightFace - GPU Accelerated)
 ```bash
-pip install face-recognition pandas pillow numpy
+pip install insightface onnxruntime-gpu opencv-python numpy pillow pandas
+```
+
+### For CUDA GPU Support (Optional but recommended)
+```bash
+pip install nvidia-cuda-runtime-cu12 nvidia-cudnn-cu12
 ```
 
 ### Web Application
@@ -30,9 +35,7 @@ pip install face-recognition pandas pillow numpy
 pip install flask flask-login flask-wtf flask-sqlalchemy email-validator werkzeug
 ```
 
-Note: `tkinter` is included with Python on Windows. On Linux, install `python3-tk`.
-
-The `face_recognition` library requires dlib, which may need CMake and a C++ compiler on some systems.
+Note: InsightFace models (~500MB) are downloaded automatically on first run to `~/.insightface/models/buffalo_l/`
 
 ## Project Structure
 
@@ -40,7 +43,7 @@ The `face_recognition` library requires dlib, which may need CMake and a C++ com
 Smart_Attendance/
 ├── src/                    # Desktop app source code
 │   ├── main.py             # Desktop GUI entry point
-│   ├── face_recognition_module.py
+│   ├── face_recognition_module.py  # InsightFace implementation
 │   ├── config.py           # Centralized configuration
 │   ├── attendance_db.py    # SQLite helper
 │   └── GUI_app.py          # Legacy GUI version
@@ -52,99 +55,119 @@ Smart_Attendance/
 │   │   ├── auth/           # Authentication blueprint
 │   │   ├── teacher/        # Teacher routes & forms
 │   │   ├── student/        # Student routes
-│   │   ├── face_recognition/  # FR service wrapper
+│   │   ├── face_recognition/  # InsightFace service wrapper
 │   │   ├── templates/      # Jinja2 templates
 │   │   └── static/         # CSS, JS, images
 │   └── instance/           # Database (gitignored)
 ├── assets/                 # Desktop GUI images
 ├── data/                   # Data files
 │   ├── Student.csv         # Student registry
-│   ├── student_encodings.pkl
+│   ├── student_encodings.pkl  # 512-dim InsightFace encodings
 │   └── attendance.db
 ├── images/                 # Student face photos (gitignored)
+├── regenerate_encodings.py # Script to regenerate all encodings
 └── reference_images/       # Test group photos (gitignored)
 ```
 
 ## Architecture
 
-### Core Flow
+### Face Recognition System (InsightFace)
 
-1. **Startup**: `main.py` loads precomputed face encodings from `data/student_encodings.pkl` or generates them from `data/Student.csv`
-2. **Recognition**: User selects an image → faces are detected and encoded → compared against stored encodings → matches marked present
-3. **Close Match Handling**: Faces within the confirmation margin (threshold + 0.1) trigger a manual confirmation dialog; confirmed faces update the encodings
-4. **Output**: Attendance exported as CSV files (presentees/absentees)
+**Technology Stack:**
+- **Detection**: SCRFD model (det_10g.onnx) - GPU accelerated
+- **Recognition**: ArcFace model (w600k_r50.onnx) - 512-dimensional embeddings
+- **Similarity**: Cosine similarity (higher = better match)
+- **Runtime**: ONNX Runtime with CUDA support (falls back to CPU)
 
-### Key Modules
-
-- **`src/main.py`**: Primary entry point. Contains `SmartAttendanceApp` class with full GUI, image processing flow, student management, and encoding persistence
-- **`src/face_recognition_module.py`**: Face detection/encoding logic. Separate from GUI for modularity
-- **`src/config.py`**: Configuration constants for paths, recognition thresholds, and image enhancement parameters
-- **`src/attendance_db.py`**: SQLite helper for attendance records
+**Key Differences from Old dlib System:**
+| Aspect | Old (dlib) | New (InsightFace) |
+|--------|------------|-------------------|
+| Embedding size | 128-dim | 512-dim |
+| Similarity metric | Euclidean distance (lower=better) | Cosine similarity (higher=better) |
+| Threshold | 0.5 (distance) | 0.35 (similarity) |
+| Speed | ~500ms/face (CPU) | ~20ms/face (GPU) |
+| Accuracy | 99.38% | 99.6% |
 
 ### Configuration (`src/config.py`)
 
-- `PATHS`: Centralized file paths for all data files
-- `FACE_RECOGNITION['threshold']`: 0.5 - distance below this is a match
-- `FACE_RECOGNITION['confirmation_margin']`: 0.1 - faces between threshold and threshold+margin trigger confirmation
-- `FACE_RECOGNITION['model']`: 'cnn' - face detection model (cnn is more accurate, hog is faster)
-- `IMAGE_ENHANCEMENT`: Brightness/contrast/sharpness multipliers applied before face detection
+```python
+FACE_RECOGNITION = {
+    'model': 'insightface',      # Using InsightFace with GPU
+    'threshold': 0.35,           # Cosine similarity threshold (0-1, higher=stricter)
+    'confirmation_margin': 0.08, # Faces between 0.27-0.35 need manual confirmation
+    'det_size': (640, 640),      # Detection input size
+    'det_threshold': 0.5,        # Face detection confidence
+}
 
-### Important Patterns
+IMAGE_ENHANCEMENT = {
+    'brightness': 1.2,
+    'contrast': 1.2,
+    'sharpness': 1.1,
+}
+```
 
-- Encodings are persisted to pkl after each confirmed close match to improve future recognition
-- Rejected face encodings are tracked in `self.rejections` to avoid re-prompting for the same face
-- Image preprocessing (brightness, contrast, sharpness enhancement) is applied to both reference and input images
-- All paths use relative paths from project root via `PATHS` config
+### Core Flow
+
+1. **Startup**: Models loaded from `~/.insightface/models/buffalo_l/`
+2. **Recognition**: Image uploaded → SCRFD detects faces → ArcFace generates 512-dim embeddings → Cosine similarity matching
+3. **Close Match Handling**: Faces with similarity 0.27-0.35 trigger manual confirmation with checkboxes
+4. **Attendance**: Recognized students marked present, enrolled students not in photo marked absent
+5. **Multiple Sessions**: Each save creates new records (supports multiple classes per day)
+
+### Key Modules
+
+- **`web/app/face_recognition/service.py`**: InsightFace service with SCRFD detector and ArcFace recognizer
+- **`src/face_recognition_module.py`**: Desktop app face recognition (same InsightFace implementation)
+- **`src/config.py`**: Thresholds, paths, and enhancement settings
+- **`regenerate_encodings.py`**: Utility to regenerate all student encodings
 
 ## Web Application
 
 ### Features
 - **Authentication**: Login/register with role-based access (teacher/student)
-- **Teacher Dashboard**: Mark attendance via photo upload, manage students
-- **Student Dashboard**: View attendance history and statistics
-- **Face Recognition**: Integrated FR service for attendance marking
-- **Student Management**: Add/edit/delete students with photo uploads
-
-### Tech Stack
-- Flask with Blueprints
-- Flask-Login for authentication
-- Flask-SQLAlchemy with SQLite
-- Flask-WTF for forms
-- Bootstrap 5 + custom CSS
-
-### UI Theme - SLCM Clone
-The web app UI is styled to match the SLCM (Student Life Cycle Management) portal used by Manipal University.
-
-**Layout Structure:**
-- Red announcement bar at top with user name
-- Header with logo, green navigation tabs, and profile dropdown
-- Orange "My Home Page" breadcrumb
-- Two-column layout: sidebar menu + main content area
-- Campus background image visible below content
-
-**Key CSS Classes (in `slcm.css`):**
-- `.slcm-announcement-bar` - Red top bar (#8B0000)
-- `.slcm-header` - White header with logo and nav
-- `.slcm-nav-tab` - Green navigation tabs (#4a5a3c)
-- `.slcm-breadcrumb` - Orange breadcrumb links (#cc6600)
-- `.slcm-sidebar` - Left sidebar with menu items
-- `.slcm-content` - Main content area
-- `.slcm-table` - Styled data tables
-
-**Templates:**
-- `slcm_base.html` - Base template with header, nav, breadcrumb
-- `student/slcm_dashboard.html` - Student attendance view
-- `teacher/slcm_dashboard.html` - Teacher dashboard
-- `teacher/slcm_attendance.html` - Mark attendance page
-- `teacher/slcm_students.html` - Student management page
-
-**Required Images:**
-- `web/app/static/images/campus-bg.jpg` - Campus background (visible below content)
-- `web/app/static/images/logo.png` - Logo in header
+- **Teacher Dashboard**: Mark attendance, view per-class statistics, manage students
+- **Student Dashboard**: View attendance history and per-subject percentages
+- **Face Recognition**: InsightFace with GPU acceleration
+- **Close Match Confirmation**: Checkboxes to manually confirm borderline matches
+- **Class Records**: View attendance by session with present/absent counts
+- **Multiple Sessions**: Supports multiple attendance sessions per day per class
 
 ### Key Routes
 - `/auth/login`, `/auth/register` - Authentication
-- `/teacher/dashboard` - Teacher home
+- `/teacher/dashboard` - Teacher home with per-class stats
 - `/teacher/attendance` - Upload photo & mark attendance
+- `/teacher/class/<id>/records` - View class attendance history
 - `/teacher/students` - CRUD student management
-- `/student/dashboard` - Student home
+- `/student/dashboard` - Student attendance view
+
+### Attendance Logic
+```
+1. Teacher uploads class photo
+2. Face recognition identifies students:
+   - High confidence (>35%) → Auto-recognized (green cards)
+   - Medium confidence (27-35%) → Need confirmation (orange cards with checkboxes)
+   - Low confidence (<27%) → Unknown
+3. Teacher confirms close matches via checkboxes
+4. On save:
+   - Recognized + confirmed students → marked PRESENT
+   - Enrolled students not in photo → marked ABSENT
+5. Multiple saves per day create separate session records
+```
+
+### Database Models
+- **User**: Authentication (email, password, role)
+- **Student**: Profile (reg_no, name, face_encoding as pickled 512-dim list)
+- **Class**: Subject (name, code, teacher_id)
+- **ClassEnrollment**: Student-class relationship
+- **Attendance**: Records (student_id, class_id, date, status, confidence) - NO unique constraint
+
+### UI Theme - SLCM Clone
+Styled to match Manipal University's SLCM portal with red header, green tabs, orange breadcrumbs.
+
+### Templates
+- `slcm_base.html` - Base template
+- `teacher/slcm_dashboard.html` - Teacher dashboard with per-class stats
+- `teacher/slcm_attendance.html` - Mark attendance with close match checkboxes
+- `teacher/slcm_class_records.html` - Class attendance history
+- `teacher/slcm_students.html` - Student management
+- `student/slcm_dashboard.html` - Student attendance view
