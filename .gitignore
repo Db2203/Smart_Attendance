@@ -8,3 +8,14 @@ attendance.db
 /Reference_Images/
 absent.csv
 present.csv
+# Personal data: keep out of the repository
+Images/*
+!Images/README.md
+Reference_Images/
+Student.csv
+!Student.csv
+data/Student.csv
+absent.csv
+present.csv
+*.pkl
+web/instance/
